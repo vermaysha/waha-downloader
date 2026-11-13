@@ -233,11 +233,12 @@ describe("archive adapters", () => {
 
     const uploadAllRes = await gdrive.uploadAll(filePath, "downloads/ignored.mp4");
     expect(uploadAllRes).toEqual({
-      primaryUrl: "https://drive.google.com/file/d/file-123/view",
+      primaryUrl:
+        "https://drive.usercontent.google.com/download?id=file-123&export=download&confirm=t",
       links: [
         { label: "GDrive", url: "https://drive.google.com/file/d/file-123/view" },
       ],
-      preferLocalFile: true,
+      preferLocalFile: false,
     });
   });
 

@@ -200,7 +200,11 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
                     .join("\n")
                 : uploadResult.links[0]?.url ?? uploadResult.primaryUrl;
 
-            if (downloaded.fileSize <= deps.maxWhatsappMediaBytes) {
+            const effectiveMediaBytes = uploadResult.preferLocalFile
+              ? Math.ceil((downloaded.fileSize * 4) / 3) + 1024
+              : downloaded.fileSize;
+
+            if (effectiveMediaBytes <= deps.maxWhatsappMediaBytes) {
               deps.logger?.info(
                 `[WAHA] Replying video to ${chatId} (msg=${payload.id})`,
               );

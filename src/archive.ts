@@ -234,7 +234,9 @@ export class GoogleDriveArchive implements MediaArchivePort {
     return data.access_token;
   }
 
-  async upload(filePath: string, _objectKey: string): Promise<string> {
+  private async uploadFile(
+    filePath: string,
+  ): Promise<{ id: string; viewUrl: string; directUrl: string }> {
     const accessToken = await this.getAccessToken();
     const file = Bun.file(filePath);
     const filename = basename(filePath);
@@ -315,23 +317,31 @@ export class GoogleDriveArchive implements MediaArchivePort {
       }
     }
 
-    return (
+    const viewUrl =
       uploaded.webViewLink ||
       uploaded.webContentLink ||
-      `https://drive.google.com/file/d/${uploaded.id}/view`
-    );
+      `https://drive.google.com/file/d/${uploaded.id}/view`;
+    const directUrl = `https://drive.usercontent.google.com/download?id=${encodeURIComponent(uploaded.id)}&export=download&confirm=t`;
+
+    return { id: uploaded.id, viewUrl, directUrl };
+  }
+
+  async upload(filePath: string, _objectKey: string): Promise<string> {
+    const { viewUrl } = await this.uploadFile(filePath);
+    return viewUrl;
   }
 
   async uploadAll(
     filePath: string,
-    objectKey: string,
+    _objectKey: string,
   ): Promise<ArchiveUploadResult> {
-    const url = await this.upload(filePath, objectKey);
+    const { viewUrl, directUrl } = await this.uploadFile(filePath);
     return {
-      primaryUrl: url,
-      links: [{ label: "GDrive", url }],
-      // Google Drive webViewLink is an HTML page, not a raw video stream for WAHA.
-      preferLocalFile: true,
+      primaryUrl: this.config.makePublic ? directUrl : viewUrl,
+      links: [{ label: "GDrive", url: viewUrl }],
+      // Public Drive files can be fetched by WAHA via directUrl (avoids 50 MiB JSON base64 limit).
+      // Private Drive files fall back to local base64 upload.
+      preferLocalFile: !this.config.makePublic,
     };
   }
 }
