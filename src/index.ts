@@ -17,6 +17,7 @@ async function main(): Promise<void> {
     waha,
     downloader,
     archive,
+    downloadConcurrency: config.downloadConcurrency,
     maxWhatsappMediaBytes: config.maxWhatsappMediaBytes,
     tmpDir: config.tmpDir,
     cookiesDir: config.cookiesDir,

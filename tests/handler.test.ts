@@ -547,4 +547,224 @@ describe("createMessageHandler", () => {
     expect(observedOptions).toBeUndefined();
     expect(await readdir(rootTmp)).toEqual([]);
   });
+
+  test("multi-URL /dl extracts space- and newline-separated URLs and replies per URL", async () => {
+    const rootTmp = await makeTempRoot();
+    const reactions: string[] = [];
+    const downloadedUrls: string[] = [];
+    const sentVideos: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction(messageId, emoji) {
+        reactions.push(`${messageId}:${emoji}`);
+      },
+      async sendVideo(params) {
+        sentVideos.push(`${params.chatId}|${params.replyTo}|${params.videoUrl}`);
+      },
+      async sendText() {},
+    };
+
+    const downloader: DownloaderPort = {
+      async download(url, outputDir) {
+        downloadedUrls.push(url);
+        const idx = downloadedUrls.length;
+        const filename = `video-${idx}.mp4`;
+        const filePath = join(outputDir, filename);
+        await Bun.write(filePath, new Uint8Array(256));
+        return { filePath, fileSize: 256, filename };
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload(filePath) {
+        const name = filePath.split("/").pop();
+        return `https://cdn.example.com/${name}`;
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-multi",
+        from: "628333@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/1 https://example.com/2\nhttps://example.com/3",
+        source: "app",
+      },
+    });
+
+    expect(reactions).toEqual(["msg-multi:⏳"]);
+    expect(downloadedUrls.sort()).toEqual([
+      "https://example.com/1",
+      "https://example.com/2",
+      "https://example.com/3",
+    ]);
+    expect(sentVideos).toHaveLength(3);
+    expect(sentVideos.sort()).toEqual([
+      "628333@c.us|msg-multi|https://cdn.example.com/video-1.mp4",
+      "628333@c.us|msg-multi|https://cdn.example.com/video-2.mp4",
+      "628333@c.us|msg-multi|https://cdn.example.com/video-3.mp4",
+    ]);
+    expect(await readdir(rootTmp)).toEqual([]);
+  });
+
+  test("bounded concurrency: active downloads never exceed downloadConcurrency across multi-URL and concurrent Download Requests", async () => {
+    const rootTmp = await makeTempRoot();
+    let activeDownloads = 0;
+    let maxActiveDownloads = 0;
+    const completedUrls: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo(params) {
+        completedUrls.push(params.videoUrl);
+      },
+      async sendText() {},
+    };
+
+    const downloader: DownloaderPort = {
+      async download(url, outputDir) {
+        activeDownloads += 1;
+        maxActiveDownloads = Math.max(maxActiveDownloads, activeDownloads);
+        await new Promise((resolve) => setTimeout(resolve, 25));
+        activeDownloads -= 1;
+
+        const name = `${url.split("/").pop()}.mp4`;
+        const filePath = join(outputDir, name);
+        await Bun.write(filePath, new Uint8Array(64));
+        return { filePath, fileSize: 64, filename: name };
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload(filePath) {
+        const name = filePath.split("/").pop();
+        return `https://cdn.example.com/${name}`;
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      downloadConcurrency: 2,
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+    });
+
+    await Promise.all([
+      handle({
+        event: "message.any",
+        session: "default",
+        payload: {
+          id: "req-1",
+          from: "628444@c.us",
+          fromMe: false,
+          body: "/dl https://example.com/a https://example.com/b https://example.com/c",
+          source: "app",
+        },
+      }),
+      handle({
+        event: "message.any",
+        session: "default",
+        payload: {
+          id: "req-2",
+          from: "628555@c.us",
+          fromMe: false,
+          body: "/dl https://example.com/d",
+          source: "app",
+        },
+      }),
+      handle({
+        event: "message.any",
+        session: "default",
+        payload: {
+          id: "req-3",
+          from: "628666@c.us",
+          fromMe: false,
+          body: "/dl https://example.com/e",
+          source: "app",
+        },
+      }),
+    ]);
+
+    expect(maxActiveDownloads).toBe(2);
+    expect(completedUrls).toHaveLength(5);
+    expect(await readdir(rootTmp)).toEqual([]);
+  });
+
+  test("partial-failure isolation: failure on one URL reports error for that URL without aborting remaining URLs", async () => {
+    const rootTmp = await makeTempRoot();
+    const sentVideos: string[] = [];
+    const textReplies: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo(params) {
+        sentVideos.push(`${params.chatId}|${params.replyTo}|${params.videoUrl}`);
+      },
+      async sendText(params) {
+        textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+    };
+
+    const downloader: DownloaderPort = {
+      async download(url, outputDir) {
+        if (url === "https://example.com/bad") {
+          await Bun.write(join(outputDir, "partial.part"), "partial");
+          throw new Error("video unavailable");
+        }
+        const name = `${url.split("/").pop()}.mp4`;
+        const filePath = join(outputDir, name);
+        await Bun.write(filePath, new Uint8Array(128));
+        return { filePath, fileSize: 128, filename: name };
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload(filePath) {
+        const name = filePath.split("/").pop();
+        return `https://cdn.example.com/${name}`;
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      downloadConcurrency: 2,
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-partial",
+        from: "628777@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/ok1\nhttps://example.com/bad\nhttps://example.com/ok2",
+        source: "app",
+      },
+    });
+
+    expect(sentVideos.sort()).toEqual([
+      "628777@c.us|msg-partial|https://cdn.example.com/ok1.mp4",
+      "628777@c.us|msg-partial|https://cdn.example.com/ok2.mp4",
+    ]);
+    expect(textReplies).toEqual([
+      "628777@c.us|msg-partial|Download failed (https://example.com/bad): video unavailable",
+    ]);
+    expect(await readdir(rootTmp)).toEqual([]);
+  });
 });
