@@ -39,8 +39,16 @@ export interface DownloadedMedia {
   filename: string;
 }
 
+export interface DownloadOptions {
+  cookiesFile?: string;
+}
+
 export interface DownloaderPort {
-  download(url: string, outputDir: string): Promise<DownloadedMedia>;
+  download(
+    url: string,
+    outputDir: string,
+    options?: DownloadOptions,
+  ): Promise<DownloadedMedia>;
 }
 
 export interface MediaArchivePort {
