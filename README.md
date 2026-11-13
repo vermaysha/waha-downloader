@@ -68,6 +68,44 @@ See [.env.example](.env.example) for the full list:
 - **`/cookies del <domain>`** — Delete your saved cookies for `<domain>`.
 - **`/help`** or **`/h`** — Show the command usage guide.
 
+## Running with systemd (User Service)
+
+1. Create `~/.config/systemd/user/waha-downloader.service` (replace `/path/to/waha-downloader` and verify `bun` / `yt-dlp` / `ffmpeg` paths with `which bun yt-dlp ffmpeg`):
+
+   ```ini
+   [Unit]
+   Description=WAHA Downloader
+   After=network-online.target
+   Wants=network-online.target
+
+   [Service]
+   Type=simple
+   WorkingDirectory=/path/to/waha-downloader
+   EnvironmentFile=/path/to/waha-downloader/.env
+   Environment=PATH=%h/.bun/bin:/usr/local/bin:/usr/bin:/bin
+   ExecStart=%h/.bun/bin/bun run src/index.ts
+   Restart=always
+   RestartSec=5
+
+   [Install]
+   WantedBy=default.target
+   ```
+
+2. Reload systemd, enable lingering (so the service keeps running after you log out), and start it:
+
+   ```bash
+   systemctl --user daemon-reload
+   sudo loginctl enable-linger "$USER"
+   systemctl --user enable --now waha-downloader.service
+   ```
+
+3. Check status and logs:
+
+   ```bash
+   systemctl --user status waha-downloader.service
+   journalctl --user -u waha-downloader.service -f
+   ```
+
 ## Development
 
 ```bash
