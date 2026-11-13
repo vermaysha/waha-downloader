@@ -179,7 +179,11 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
             deps.logger?.info(
               `[Archive] Uploading ${downloaded.filename} (${downloaded.fileSize} bytes) -> ${objectKey}`,
             );
-            const uploadResult = deps.archive.uploadAll
+            const uploadResult: {
+              primaryUrl: string;
+              links: Array<{ label: string; url: string }>;
+              preferLocalFile?: boolean;
+            } = deps.archive.uploadAll
               ? await deps.archive.uploadAll(downloaded.filePath, objectKey)
               : {
                   primaryUrl: await deps.archive.upload(
@@ -206,6 +210,9 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
                 filename: downloaded.filename,
                 caption: replyText,
                 replyTo: payload.id,
+                ...(uploadResult.preferLocalFile
+                  ? { filePath: downloaded.filePath }
+                  : {}),
               });
             } else {
               deps.logger?.info(

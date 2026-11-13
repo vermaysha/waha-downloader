@@ -114,16 +114,26 @@ export class CompositeArchive implements MediaArchivePort {
     filePath: string,
     objectKey: string,
   ): Promise<ArchiveUploadResult> {
-    const links = await Promise.all(
-      this.targets.map(async ({ label, archive }) => ({
-        label,
-        url: await archive.upload(filePath, objectKey),
-      })),
+    const results = await Promise.all(
+      this.targets.map(async ({ label, archive }) => {
+        if (archive.uploadAll) {
+          const res = await archive.uploadAll(filePath, objectKey);
+          return {
+            link: { label, url: res.primaryUrl },
+            preferLocalFile: Boolean(res.preferLocalFile),
+          };
+        }
+        return {
+          link: { label, url: await archive.upload(filePath, objectKey) },
+          preferLocalFile: false,
+        };
+      }),
     );
 
     return {
-      primaryUrl: links[0]!.url,
-      links,
+      primaryUrl: results[0]!.link.url,
+      links: results.map((r) => r.link),
+      preferLocalFile: results[0]!.preferLocalFile,
     };
   }
 }
@@ -310,6 +320,19 @@ export class GoogleDriveArchive implements MediaArchivePort {
       uploaded.webContentLink ||
       `https://drive.google.com/file/d/${uploaded.id}/view`
     );
+  }
+
+  async uploadAll(
+    filePath: string,
+    objectKey: string,
+  ): Promise<ArchiveUploadResult> {
+    const url = await this.upload(filePath, objectKey);
+    return {
+      primaryUrl: url,
+      links: [{ label: "GDrive", url }],
+      // Google Drive webViewLink is an HTML page, not a raw video stream for WAHA.
+      preferLocalFile: true,
+    };
   }
 }
 

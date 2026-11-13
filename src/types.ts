@@ -38,6 +38,7 @@ export interface WahaClientPort {
     filename: string;
     caption: string;
     replyTo: string;
+    filePath?: string;
   }): Promise<void>;
   sendText(params: {
     chatId: string;
@@ -73,6 +74,7 @@ export interface ArchiveUploadLink {
 export interface ArchiveUploadResult {
   primaryUrl: string;
   links: ArchiveUploadLink[];
+  preferLocalFile?: boolean;
 }
 
 export interface MediaArchivePort {

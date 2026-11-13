@@ -124,7 +124,22 @@ export class WahaClient implements WahaClientPort {
     filename: string;
     caption: string;
     replyTo: string;
+    filePath?: string;
   }): Promise<void> {
+    const file = params.filePath
+      ? {
+          mimetype: "video/mp4",
+          filename: params.filename,
+          data: Buffer.from(
+            await Bun.file(params.filePath).arrayBuffer(),
+          ).toString("base64"),
+        }
+      : {
+          mimetype: "video/mp4",
+          filename: params.filename,
+          url: params.videoUrl,
+        };
+
     await this.requestOk("/api/sendVideo", {
       method: "POST",
       body: JSON.stringify({
@@ -134,11 +149,7 @@ export class WahaClient implements WahaClientPort {
         caption: params.caption,
         asNote: false,
         convert: false,
-        file: {
-          mimetype: "video/mp4",
-          filename: params.filename,
-          url: params.videoUrl,
-        },
+        file,
       }),
     });
   }

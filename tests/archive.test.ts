@@ -108,6 +108,7 @@ describe("archive adapters", () => {
         { label: "S3", url: "https://cdn.example.com/downloads/clip.mp4" },
         { label: "Temp", url: "https://temp.sh/xyz/clip.mp4" },
       ],
+      preferLocalFile: false,
     });
   });
 
@@ -228,6 +229,15 @@ describe("archive adapters", () => {
     expect(JSON.parse(requests[3]!.body!)).toEqual({
       role: "reader",
       type: "anyone",
+    });
+
+    const uploadAllRes = await gdrive.uploadAll(filePath, "downloads/ignored.mp4");
+    expect(uploadAllRes).toEqual({
+      primaryUrl: "https://drive.google.com/file/d/file-123/view",
+      links: [
+        { label: "GDrive", url: "https://drive.google.com/file/d/file-123/view" },
+      ],
+      preferLocalFile: true,
     });
   });
 
