@@ -1,4 +1,4 @@
-import type { WahaClientPort, WahaMessageEvent } from "./types";
+import type { Logger, WahaClientPort, WahaMessageEvent } from "./types";
 
 export interface WahaConnectionConfig {
   baseUrl: string;
@@ -158,6 +158,7 @@ export interface WebSocketListenerOptions {
   config: WahaConnectionConfig;
   onEvent: (event: WahaMessageEvent) => Promise<void>;
   onError?: (error: unknown) => void;
+  logger?: Logger;
   baseDelayMs?: number;
   maxDelayMs?: number;
 }
@@ -181,6 +182,9 @@ export function connectWahaWebSocket(options: WebSocketListenerOptions): {
       options.maxDelayMs,
     );
     attempt += 1;
+    options.logger?.info(
+      `[WAHA] WebSocket closed, reconnecting in ${delayMs}ms (attempt ${attempt})`,
+    );
     reconnectTimer = setTimeout(connect, delayMs);
   };
 
@@ -191,6 +195,9 @@ export function connectWahaWebSocket(options: WebSocketListenerOptions): {
 
     ws.addEventListener("open", () => {
       attempt = 0;
+      options.logger?.info(
+        `[WAHA] WebSocket connected (session=${options.config.session})`,
+      );
     });
 
     ws.addEventListener("message", (msg) => {

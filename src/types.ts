@@ -63,3 +63,8 @@ export interface DownloaderPort {
 export interface MediaArchivePort {
   upload(filePath: string, objectKey: string): Promise<string>;
 }
+
+export interface Logger {
+  info(message: string): void;
+  error(message: string, error?: unknown): void;
+}

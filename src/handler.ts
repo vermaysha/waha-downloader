@@ -5,6 +5,7 @@ import { handleCookiesCommand } from "./cookies-command";
 import { createConcurrencyQueue } from "./queue";
 import type {
   DownloaderPort,
+  Logger,
   MediaArchivePort,
   WahaClientPort,
   WahaMessageEvent,
@@ -18,6 +19,7 @@ export interface MessageHandlerDeps {
   maxWhatsappMediaBytes: number;
   tmpDir: string;
   cookiesDir?: string;
+  logger?: Logger;
 }
 
 function extractCommandText(event: WahaMessageEvent): string {
@@ -75,6 +77,9 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
     const chatId = payload.fromMe ? payload.to || payload.from : payload.from;
 
     if (/^\/cookies(?:\s|$)/.test(text)) {
+      deps.logger?.info(
+        `[WAHA] Received /cookies command from ${chatId} (msg=${payload.id})`,
+      );
       await handleCookiesCommand(
         { waha: deps.waha, cookieStore },
         payload,
@@ -88,6 +93,10 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
     if (urls.length === 0) {
       return;
     }
+
+    deps.logger?.info(
+      `[WAHA] Received /dl command from ${chatId} (${urls.length} url(s), msg=${payload.id})`,
+    );
 
     try {
       await deps.waha.sendReaction(payload.id, "⏳");
@@ -117,18 +126,27 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
               }
             }
 
+            deps.logger?.info(
+              `[yt-dlp] Downloading ${url} (cookies=${tempCookiePath ? "yes" : "no"})`,
+            );
             const downloaded = await deps.downloader.download(
               url,
               workDir,
               tempCookiePath ? { cookiesFile: tempCookiePath } : undefined,
             );
             const objectKey = buildObjectKey(downloaded.filename);
+            deps.logger?.info(
+              `[R2] Uploading ${downloaded.filename} (${downloaded.fileSize} bytes) -> ${objectKey}`,
+            );
             const archiveUrl = await deps.archive.upload(
               downloaded.filePath,
               objectKey,
             );
 
             if (downloaded.fileSize <= deps.maxWhatsappMediaBytes) {
+              deps.logger?.info(
+                `[WAHA] Replying video to ${chatId} (msg=${payload.id})`,
+              );
               await deps.waha.sendVideo({
                 chatId,
                 videoUrl: archiveUrl,
@@ -137,15 +155,20 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
                 replyTo: payload.id,
               });
             } else {
+              deps.logger?.info(
+                `[WAHA] Video exceeds limit (${downloaded.fileSize} bytes), replying link to ${chatId} (msg=${payload.id})`,
+              );
               await deps.waha.sendText({
                 chatId,
                 text: archiveUrl,
                 replyTo: payload.id,
               });
             }
+            deps.logger?.info(`[WAHA] Done ${url} -> ${archiveUrl}`);
           } catch (error) {
             const reason =
               error instanceof Error ? error.message : "Unknown error occurred";
+            deps.logger?.error(`[WAHA] Failed ${url}: ${reason}`, error);
             const prefix =
               urls.length > 1 ? `Download failed (${url})` : "Download failed";
             await deps.waha.sendText({

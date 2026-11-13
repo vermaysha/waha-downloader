@@ -21,11 +21,13 @@ async function main(): Promise<void> {
     maxWhatsappMediaBytes: config.maxWhatsappMediaBytes,
     tmpDir: config.tmpDir,
     cookiesDir: config.cookiesDir,
+    logger: console,
   });
 
   const listener = connectWahaWebSocket({
     config: config.waha,
     onEvent: handleEvent,
+    logger: console,
     onError: (err) => {
       console.error("WAHA WebSocket / handler error:", err);
     },
