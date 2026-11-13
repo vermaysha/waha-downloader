@@ -1,0 +1,62 @@
+<div></div>
+
+{{< tabs "delete-message-api" "language" >}}
+
+{{< tab "cURL" >}}
+```bash { title="Delete Message" }
+curl -X 'DELETE' \
+  'http://localhost:3000/api/default/chats/12132132130%40c.us/messages/true_12132132130%40c.us_AAAAAAAAAAAAAAAAAAAA' \
+  -H 'X-Api-Key: yoursecretkey' \
+  -H 'Accept: application/json'
+```
+{{< /tab >}}
+
+{{< tab "Python" >}}
+```python { title="delete-message.py" }
+import requests
+
+url = "http://localhost:3000/api/default/chats/12132132130%40c.us/messages/true_12132132130%40c.us_AAAAAAAAAAAAAAAAAAAA"
+headers = {
+    "X-Api-Key": "yoursecretkey",
+}
+
+response = requests.delete(url, headers=headers)
+print(response.json())
+```
+{{< /tab >}}
+
+{{< tab "JavaScript" >}}
+```javascript { title="delete-message.js" }
+const axios = require('axios');
+
+const url = "http://localhost:3000/api/default/chats/12132132130%40c.us/messages/true_12132132130%40c.us_AAAAAAAAAAAAAAAAAAAA";
+const headers = {
+    'X-Api-Key': 'yoursecretkey',
+};
+
+axios.delete(url, { headers })
+    .then(response => console.log(response.data))
+    .catch(error => console.error(error));
+```
+{{< /tab >}}
+
+{{< tab "PHP" >}}
+```php { title="delete-message.php" }
+<?php
+$url = "http://localhost:3000/api/default/chats/12132132130%40c.us/messages/true_12132132130%40c.us_AAAAAAAAAAAAAAAAAAAA";
+
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'X-Api-Key: yoursecretkey',
+]);
+$response = curl_exec($ch);
+curl_close($ch);
+
+echo $response;
+?>
+```
+{{< /tab >}}
+
+{{< /tabs >}}

@@ -1,0 +1,87 @@
+<div></div>
+
+{{< tabs "reaction-api" "language" >}}
+
+{{< tab "cURL" >}}
+```bash { title="Reaction" }
+curl -X 'PUT' \
+  'http://localhost:3000/api/reaction' \
+  -H 'X-Api-Key: yoursecretkey' \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "session": "default",
+  "messageId": "false_12132132130@c.us_AAAAAAAAAAAAAAAAAAAA",
+  "reaction": "👍"
+}'
+```
+{{< /tab >}}
+
+{{< tab "Python" >}}
+```python { title="reaction.py" }
+import requests
+
+url = "http://localhost:3000/api/reaction"
+headers = {
+    "X-Api-Key": "yoursecretkey",
+    "Content-Type": "application/json",
+}
+data = {
+    "session": "default",
+    "messageId": "false_12132132130@c.us_AAAAAAAAAAAAAAAAAAAA",
+    "reaction": "👍"
+}
+
+response = requests.put(url, json=data, headers=headers)
+print(response.json())
+```
+{{< /tab >}}
+
+{{< tab "JavaScript" >}}
+```javascript { title="reaction.js" }
+const axios = require('axios');
+
+const url = "http://localhost:3000/api/reaction";
+const data = {
+    session: "default",
+    messageId: "false_12132132130@c.us_AAAAAAAAAAAAAAAAAAAA",
+    reaction: "👍"
+};
+const headers = {
+    'X-Api-Key': 'yoursecretkey',
+    'Content-Type': 'application/json',
+};
+
+axios.put(url, data, { headers })
+    .then(response => console.log(response.data))
+    .catch(error => console.error(error));
+```
+{{< /tab >}}
+
+{{< tab "PHP" >}}
+```php { title="reaction.php" }
+<?php
+$url = "http://localhost:3000/api/reaction";
+$data = [
+    "session" => "default",
+    "messageId" => "false_12132132130@c.us_AAAAAAAAAAAAAAAAAAAA",
+    "reaction" => "👍"
+];
+
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'X-Api-Key: yoursecretkey',
+    'Content-Type: application/json',
+]);
+$response = curl_exec($ch);
+curl_close($ch);
+
+echo $response;
+?>
+```
+{{< /tab >}}
+
+{{< /tabs >}}

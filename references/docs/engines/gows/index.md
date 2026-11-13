@@ -1,0 +1,38 @@
+---
+title: "GOWS"
+description: "Lightweight golang based engine"
+lead: ""
+date: 2025-01-06T08:48:45+00:00
+lastmod: 2025-01-06T08:48:45+00:00
+draft: false
+
+weight: 411
+---
+
+## Overview
+
+{{< include file="content/docs/how-to/engines/-what-is-engine.md" >}}
+
+**GOWS** engine **does not require a browser** to work with WhatsApp Web, it does so directly using a WebSocket.
+Not running Chromium saves you CPU and Memory, so you can run more instances on a single server!
+
+## Run GOWS
+
+```bash
+docker run -v `pwd`/.sessions:/app/.sessions -e "WHATSAPP_DEFAULT_ENGINE=GOWS" devlikeapro/waha
+```
+
+## Session Config
+{{< include file="content/docs/engines/webjs/-env-config.md" >}}
+
+## Configuration
+{{< include file="content/docs/engines/gows/-env-config.md" >}}
+
+## Events
+### session.status
+{{< include file="content/docs/engines/gows/-session-status.md" >}}
+
+## Links
+
+- [https://github.com/devlikeapro/gows](https://github.com/devlikeapro/gows)
+

@@ -1,0 +1,1948 @@
+---
+title: "🆕 Changelog"
+description: "WAHA's changelog"
+lead: "You can find here the list of changes made to WAHA."
+date: 2020-10-06T08:49:31+00:00
+lastmod: 2020-10-06T08:49:31+00:00
+draft: false
+images: ["cover.png"]
+
+menu:
+  docs:
+    parent: "help"
+weight: 199
+toc: true
+---
+
+
+## Get Notified
+If you wish to get **Monthly Summary** about WAHA changes, subscribe to our channels.
+
+{{< callout context="note" title="You can subscribe on free tier!" icon="outline/rss" >}}
+- [**Patreon ->**](https://patreon.com/wa_http_api)
+- [**Boosty ->**](https://boosty.to/wa-http-api)
+{{< /callout >}}
+
+
+{{< callout context="tip" title="Get Real-Time Email about new versions!" icon="outline/rss" >}}
+
+<div style="width: 100%">
+
+If you wish to get **Real-Time Email** about new changes,
+you can **Watch Releases** in [**🐙 WAHA GitHub**](https://github.com/devlikeapro/waha)
+
+
+{{< details "💡 GitHub - How To Subscribe" >}}
+
+Go to [https://github.com/devlikeapro/waha](https://github.com/devlikeapro/waha), click **Watch - Custom**:
+{{< imgo src="/images/github/github-watch.png" full="false" >}}
+
+Select **Releases**, click **Apply**:
+{{< imgo src="/images/github/github-watch-releases.png" full="false" >}}
+
+You will get notifications about new releases in associated email!
+
+{{< /details >}}
+
+</div>
+
+{{< /callout >}}
+
+
+## Versions
+Latest Version:
+<a href="https://github.com/devlikeapro/waha/releases" target="_blank">
+<img alt="GitHub Release" src="https://img.shields.io/github/v/release/devlikeapro/waha">
+</a>
+
+👉🏻 Check the [**🔧 Install & Update**]({{< relref "/docs/how-to/install" >}}) page to learn how to update WAHA.
+
+### 2026.10
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2026.10.1` - [**🏷️ Labels**]({{< relref "/docs/how-to/labels#label-type-and-lists" >}}) - `type` and `isActive` fields.
+- `2026.10.1` - [**👥 Groups**]({{< relref "/docs/how-to/groups#member-tags" >}}) - member tags API, `group.v2.participants.tag` event - fix #2300
+
+🧩 **ChatWoot**
+- `2026.10.1` - Add [**member tag**]({{< relref "/docs/how-to/groups#member-tags" >}}) for group messages - mention #2300
+
+🛠️ **Fixes**
+- `2026.10.1` - **GOWS** - use `FAILED` on [connection failures]({{< relref "/docs/engines/gows#sessionstatus" >}}) (ban, client outdated, etc) - pr #2318
+- `2026.10.1` - **GOWS** - swap link preview headers - fix #2322
+- `2026.10.1` - **GOWS** - fix setting status (about) - fix #2326
+- `2026.10.1` - **GOWS** - fix missing video preview (ffmpeg `partial file`) - fix #1942
+- `2026.10.1` - **GOWS** - fix `GET /api/{session}/lids/{lid}` returning own phone number for `@lid` - mention #2241, #2299
+- `2026.10.1` - **GOWS** - reduce noisy logs for retry receipts - #1942
+- `2026.10.1` - **S3** - fix saving media with non-ASCII and double spaces in file name - [**URL-encoded filename**]({{< relref "/docs/how-to/storages#media---s3" >}}) - fix #2279 - pr #2308
+- `2026.10.1` - **GOWS** - fix sending non-disappearing messages to chats with disappearing messages enabled (`@lid` vs `@c.us` chats)
+- `2026.10.1` - **GOWS** - fix labels sync - fix #2290
+- `2026.10.1` - [**🏷️ Labels**]({{< relref "/docs/how-to/labels" >}}) - a bunch of small fixes
+- `2026.10.1` - **WEBJS** - fix updating and deleting [**🏷️ Labels**]({{< relref "/docs/how-to/labels" >}})
+- `2026.10.1` - [**🏷️ Labels**]({{< relref "/docs/how-to/labels" >}}) - sort labels by id
+- `2026.10.1` - [**🏷️ Labels**]({{< relref "/docs/how-to/labels" >}}) - label name - max 100 lenght
+- `2026.10.1` - **NOWEB** - fix sending non-disappearing messages to chats with disappearing messages enabled
+- `2026.10.1` - **NOWEB** - fix app state sync - fix #2298, #2297 - pr #2304
+- `2026.10.1` - **NOWEB** - fix `GET /api/{session}/lids/count` returning `500` on PostgreSQL - fix #2306 - pr #2307
+- `2026.10.1` - **NOWEB** - fix missing `@lid` to phone number pairs the engine already knows - fix #2305
+- `2026.10.1` - [**👥 Groups**]({{< relref "/docs/how-to/groups" >}}) - fix setting empty group subject - fix #2294
+- `2026.10.1` - Validate `event` field in `POST /api/{session}/events` - pr #2303
+- `2026.10.1` - Redact `x-api-key` from websocket connection logs - pr #2301
+- `2026.10.1` - Reject non-string `x-api-key` values (arrays, objects) in header and query
+
+📊 **Dashboard**
+- `2026.10.1` - manage [**🏷️ Labels**]({{< relref "/docs/how-to/labels" >}}) in [**Chat UI**]({{< relref "/docs/how-to/dashboard#chat-ui" >}})
+
+⚙️ **Updates**
+- `2026.10.1` - Node.js - fix CVE-2026-111497 (Brotli decoder RCE) - fix #2324
+- `2026.10.1` - `file-type` - fix CVE-2026-31808 (media parser infinite loop on malformed ASF header) - closes #2327
+- `2026.10.1` - `shell-quote` - fix CVE-2026-13311 (ChatWoot commands parsing) - closes #2328
+- `2026.10.1` - `sharp` - fix GHSA-wq5f-xc86-pv6w, GHSA-rgj7-g3m4-5g8c (image decoders) - closes #2330
+- `2026.10.1` - **GOWS** - up engine
+- `2026.10.1` - **NOWEB** - up proto
+- `2026.10.1` - **WPP** - up engine
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.9
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2026.9.2` - [**👥 Groups**]({{< relref "/docs/how-to/groups#security---share-message-history-with-new-members" >}}) - `GET/PUT /.../member-share-history-mode` - fix #2282 closes #2283
+
+🧩 **Apps**
+- `2026.9.1` - [**Phone Numbers**]({{< relref "/docs/apps/phone-numbers" >}}) - resolve numbers to the WhatsApp chatId before sending, with *optional regexp rules* (`^52(\d{10})$` => `521$1`)
+- `2026.9.1` - [**Phone Numbers: Argentina**]({{< relref "/docs/apps/argentine-phone-numbers" >}}) - resolve numbers with or without the mobile `9` (`54...` / `549...`) - closes #2260
+- `2026.9.1` - [**Phone Numbers: Mexico**]({{< relref "/docs/apps/mexican-phone-numbers" >}}) - resolve numbers with or without the old `1` after the country code (`52...` / `521...`)
+
+🧩 **ChatWoot**
+- `2026.9.1` - Show **delivered** and **read** ticks in Chatwoot on messages agents send from Chatwoot (`conversations.syncMessageStatus`) - [**🧩 ChatWoot**]({{< relref "/docs/apps/chatwoot#message-status" >}}) - closes #2264
+- `2026.9.1` - Show messages you send from the WhatsApp app or API as regular outgoing messages (`conversations.outgoing: private-note | message`) - fix #2249
+- `2026.9.1` - Update names of existing Chatwoot contacts from your phone book (`wa/contacts pull --update-names no|if-raw|always`) - fix #1245
+- `2026.9.1` - Deleting a message with attachments in Chatwoot deletes every part in WhatsApp, not only the last one
+
+🛠️ **Fixes**
+- `2026.9.2` - **NOWEB** - fix delete channel message - fix #2038 - pr #2284
+- `2026.9.2` - **NOWEB** - fix edit media caption in channels
+- `2026.9.2` - **NOWEB** - fix update contact - mention #2285
+- `2026.9.2` - **GOWS** - fix update contact
+- `2026.9.2` - **WEBJS** - fix forward message - fix #2278
+- `2026.9.2` - **WEBJS** - fix get and revoke group invite code
+- `2026.9.2` - **WEBJS** - fix create group
+- `2026.9.2` - **WEBJS** - fix set profile name
+- `2026.9.2` - **WEBJS** - fix hiding "What's new" modal on start - use the app's cooldown days
+- `2026.9.1` - **WEBJS** - Fix sending media - `Data passed to getter must include an id property` - fix #2271, #2273
+- `2026.9.1` - **WEBJS** - Joining a group via invite link failed with `500` on current WhatsApp Web
+- `2026.9.1` - **WEBJS** - Getting and subscribing to presence failed with `500` on current WhatsApp Web - pr #2262
+- `2026.9.1` - **WEBJS** - `presence.update` events were missing on current WhatsApp Web
+- `2026.9.2` - **GOWS** - Some group messages were saved without content and missing from chat messages - fix #2289
+- `2026.9.1` - **GOWS** - Clearing a group description with an empty string hung - fix #2257
+- `2026.9.1` - Setting an empty group subject returns `400` instead of hanging - fix #2257
+- `2026.9.1` - Sending a poll with empty or duplicate options returns `400`
+- `2026.9.1` - **NOWEB** - Fix downloading `interactiveMessageTemplate` with `"templateMessage" message is not a media message` - fix #2275
+- `2026.9.1` - **NOWEB** - Downloading media expired on WhatsApp servers asks the phone to re-upload it instead of failing
+- `2026.9.1` - **GOWS** - Downloading media expired on WhatsApp servers asks the phone to re-upload it in more cases (`404`/`410`)
+- `2026.9.1` - **NOWEB** - Messages from history sync now have image thumbnails (`jpegThumbnail`) for newly linked sessions
+- `2026.9.1` - Dashboard - Chat media thumbnails didn't show for **NOWEB** sessions
+
+📊 **Dashboard**
+- `2026.9.2` - Dashboard - fix chat not refreshing on new messages (`@lid` vs `@c.us` chats)
+
+⚙️ **Updates**
+- `2026.9.2` - **WPP** - up engine
+- `2026.9.2` - **GOWS** - up engine
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.8
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2026.8.2` - API - `POST /api/sendSticker` - send stickers (WebP) - [**📤 Send messages**]({{< relref "/docs/how-to/send-messages#send-sticker" >}}) - fix #1287, pr #2240
+- `2026.8.2` - Media - granular download control for events and API - [**⚙️ Configuration**]({{< relref "/docs/how-to/config#media-download" >}}) - closes #2211
+- `2026.8.2` - Groups - approve new members setting - `GET/PUT /api/{session}/groups/{id}/settings/security/membership-approval` - [**👥 Groups**]({{< relref "/docs/how-to/groups#security---approve-new-members" >}}) - closes #2200
+- `2026.8.2` - Groups - join requests API - `GET /api/{session}/groups/{id}/participants/join-requests` + `/approve` and `/reject` - [**👥 Groups**]({{< relref "/docs/how-to/groups#join-requests" >}})
+- `2026.8.2` - Groups - `group.v2.participants.join-request` event - a request to join a group is created, rejected or revoked - [**👥 Groups**]({{< relref "/docs/how-to/groups#groupv2participantsjoin-request" >}})
+- `2026.8.2` - OpenTelemetry trace context - `trace_id`/`span_id` in logs, `traceparent` response header, no export by default - [**🔍 Observability**]({{< relref "/docs/how-to/observability#tracing" >}})
+- `2026.8.2` - Prometheus metrics - `GET /metrics` (optional) - [**🔍 Observability**]({{< relref "/docs/how-to/observability#prometheus-metrics" >}}) - pr #2245
+- `2026.8.2` - Docs - how to extend WAHA with apps, modules and session plugins - [**🛠️ Development**]({{< relref "/docs/how-to/development#extending-waha" >}})
+- `2026.8.1` - **GOWS** - `storage.contacts` and `storage.messageSecrets` session config flags to disable contact and message secret storage - [**GOWS**]({{< relref "/docs/how-to/sessions#gows" >}}) - closes #2207
+- `2026.8.1` - [**Message Capping**]({{< relref "/docs/how-to/sessions#message-capping" >}}) - `GET /api/sessions/{session}/capping`, `me.messageCapping` and `session.status` events - closes #2186
+- `2026.8.1` - [**Reachout Timelock**]({{< relref "/docs/how-to/sessions#reachout-timelock" >}}) - `GET /api/sessions/{session}/timelock` (**GOWS, NOWEB, WEBJS**) + **GOWS** refreshes `me.reachoutTimelock` on `463` send errors - fix #2219
+- `2026.8.1` - **NOWEB** - `WAHA_NOWEB_WA_VERSION=auto-web|auto-baileys` - fetch the latest WhatsApp Web version on start - [**NOWEB**]({{< relref "/docs/engines/noweb#configuration" >}})
+- `2026.8.1` - **GOWS** - `WAHA_GOWS_KEEPALIVE_INTERVAL_MIN|MAX` - keepalive ping interval for proxies reaping idle tunnels - [**GOWS**]({{< relref "/docs/engines/gows#keepalive" >}}) - closes devlikeapro/gows-plus#3
+
+🧩 **Apps**
+- `2026.8.2` - [**Brazilian Phone Numbers**]({{< relref "/docs/apps/brazilian-phone-numbers" >}}) - resolves the 9th digit for Brazilian numbers -  pr #2180
+- `2026.8.2` - Purge API - `POST /api/apps/{id}/purge` - delete the app's stored data, keep the app configured - [**🧩 Apps**]({{< relref "/docs/apps/about#purge-app-storage" >}})
+- `2026.8.2` - Logout purge - `POST /api/sessions/{session}/logout` accepts `{"apps": {"purge": true}}` to purge apps' storage on logout
+- `2026.8.2` - Unique apps - one instance per session for **ChatWoot**, **Reject Calls** and **Brazilian Phone Numbers**
+
+🧩 **ChatWoot**
+- `2026.8.2` - match existing contacts by resolved phone number for `@lid` chats and backfill missing `phone_number` - fix #2208
+- `2026.8.2` - name LID contacts by push name instead of raw `@lid` id - closes #1493
+- `2026.8.1` - populate the WhatsApp JID attribute for `@lid` contacts from the message payload - fix #2208
+- `2026.8.1` - do not save full attachment content in the task result - fix #2201, closes #2202
+
+🛠️ **Fixes**
+- `2026.8.2` - **WEBJS**, **NOWEB** - Channels - `reply_to` was silently ignored when sending messages to channels - fix #2233
+- `2026.8.2` - **WEBJS** - Channels - deleting a message in a channel failed - fix #2236
+- `2026.8.2` - **WEBJS** - first incoming message triggered events 2-3 times - fix #2235
+- `2026.8.2` - **GOWS** - `fromMe` messages mirrored to the wrong contact/conversation - fix #2241
+- `2026.8.2` - **GOWS** - unable to retrieve WhatsApp groups - fix #2234
+- `2026.8.2` - **GOWS** - group messages carrying a new sender key in `@lid` groups were silently lost - fix #2242
+- `2026.8.2` - **GOWS** - undecryptable messages are logged at `error` level instead of being silently dropped 
+- `2026.8.2` - Media - keep the original `.zip` for Lottie stickers when converting to an image fails - #2239
+- `2026.8.2` - Media - `downloadMedia=true` downloads media even when disabled by env vars - fix #2211
+- `2026.8.2` - Media - `media` attrs (`mimetype`, `filename`) always set; `url: null` when not downloaded
+- `2026.8.2` - honor `HTTP_PROXY`/`HTTPS_PROXY`/`NO_PROXY` env vars when downloading media - closes #2224
+- `2026.8.1` - **GOWS** - disabling all `gows.storage` flags was silently ignored and data was stored anyway - fix #2207
+- `2026.8.1` - **GOWS** - `check-exists` returns the phone number in the new `pn` field (`chatId` can be a `@lid`) - fix #2208
+- `2026.8.1` - **GOWS** - fill the phone number (`_data.Info.SenderAlt`) from the LID store in message payloads - fix #2208
+- `2026.8.1` - **GOWS** - Lids API resolves unknown `@lid` → phone number via a server query - fix #2208
+- `2026.8.1` - Groups - set the phone number in `participant.pn` for `@lid` participants when available
+- `2026.8.1` - **WEBJS** - phantom `AUTHENTICATED`/`READY` statuses after logout and message id binding race - fix #2222
+- `2026.8.1` - **WEBJS** - session stuck in `STARTING` status
+- `2026.8.1` - **WEBJS** - hide "What's new on WhatsApp Web" popup - fix #2217
+- `2026.8.1` - **WEBJS** - send button reply - fix #2183
+- `2026.8.1` - **WEBJS** - set group description - fix #2199
+- `2026.8.1` - **WEBJS** - fix adding group participants
+- `2026.8.1` - **WPP** - fix promoting group participant to admin
+- `2026.8.1` - **NOWEB** - fix leaving a group via `group.v2.leave` - fix #2206, closes #2209
+- `2026.8.1` - **NOWEB** - fix presence chat issue
+- `2026.8.1` - **S3** - set `ContentType` on uploaded media objects
+- `2026.8.1` - reliable session stop and process shutdown (**WEBJS** kills Chrome, **NOWEB** stops cleanly, **GOWS** gets SIGKILL if hanged)
+
+📊 **Dashboard**
+- `2026.8.2` - up dashboard
+- `2026.8.1` - up dashboard
+
+⚙️ **Updates**
+- `2026.8.2` - **WPP** - up engine
+- `2026.8.2` - up `axios` to `1.19.0`
+- `2026.8.1` - **WEBJS** - up Chrome to `142.0.7444.134-1`
+- `2026.8.1` - **WPP** - up engine
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.7
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2026.7.2` - **NOWEB** - `WAHA_NOWEB_WA_VERSION` / `WAHA_NOWEB_WA_VERSION_FORCE` env variables to override WhatsApp Web version - [**NOWEB**]({{< relref "/docs/engines/noweb#configuration" >}}) - closes #2193
+- `2026.7.2` - Groups - `settings/security/member-add-mode` API - who can add new members - [**👥 Groups**]({{< relref "/docs/how-to/groups#security---who-can-add-members" >}}) - fix #2165, closes #2172
+- `2026.7.2` - **GOWS** - `WAHA_GOWS_LINK_PREVIEW_TIMEOUT` env variable (default `10s`) for link preview generation - [**GOWS**]({{< relref "/docs/engines/gows#link-preview" >}})
+- `2026.7.1` - **API** - scoped session keys — narrow media / control keys so you never share the real API key - [**🔒 Keys API**]({{< relref "/docs/how-to/security#scoped-session-keys-media--control" >}}) - fix #2146
+- `2026.7.1` - **GOWS** - Passkey (WebAuthn) session pairing — pair sessions from your own UI - [**How to Handle Passkey**]({{< relref "/blog/waha-passkey" >}})
+- `2026.7.1` - **WEBJS** - expose the current account LID in session "me" info (`me.lid`)
+- `2026.7.1` - **GOWS** - Passkey (WebAuthn) session pairing via `session.status` and `/api/{session}/auth/passkey` API - [**How to Handle Passkey**]({{< relref "/blog/waha-passkey" >}})
+
+🧩 **ChatWoot**
+- `2026.7.2` - safe read and show typing while sending messages - fix #2173
+
+🛠️ **Fixes**
+
+- `2026.7.2` - Restart stopped sessions no longer aborts when one stuck session fails to restart - closes #2169
+- `2026.7.2` - **NOWEB** - fix WhatsApp Web version - fix #2191
+- `2026.7.2` - **NOWEB** - empty `message.edited` event body - fix #2168
+- `2026.7.2` - **GOWS** - `unknown field "faviconMMSMetadata"` error - fix #2172
+- `2026.7.2` - **WEBJS**, **WPP** - group info `membersCanAddNewMember` was read from the wrong setting
+- `2026.7.2` - **GOWS**, **NOWEB**, **WEBJS** - `server returned error 463` when messaging new contacts - [**Reachout Timelock**]({{< relref "/docs/how-to/sessions#reachout-timelock" >}}) - fix #2166
+- `2026.7.2` - **WEBJS** - Link previews in Channels: blurred thumbnail on Android, white image on iPhone - fix #2163
+- `2026.7.2` - **NOWEB** - Link previews in Channels: encrypted thumbnail; preview fetch timeout 3s → 10s - fix #2163
+- `2026.7.2` - **GOWS** - Link previews in Channels not shown; preview fetch timeout 6s → 10s - fix #2163
+- `2026.7.1` - **WEBJS** - `waha is not receiving message events` after the `_serialized` id rename - fix #2157, #2162
+- `2026.7.1` - **WEBJS** - `Unhandled TypeError: Cannot read properties of undefined (reading 'includes')` - fix #2158
+- `2026.7.1` - **WEBJS** - `GET /api/{session}/groups` returns HTTP 500 - fix #2159
+- `2026.7.1` - **WEBJS** - `Cannot GET /api/{session}/chats` - fix #2160
+- `2026.7.1` - **WEBJS** - sending an image fails with `msg.avParams is not a function` - fix #2149
+- `2026.7.1` - **GOWS** - no webhook events after `<stream:error>` while status stays `WORKING` - fix #2151
+- `2026.7.1` - **NOWEB** - timestamp bug that breaks message sorting when fetching chat history - fix #2139
+- `2026.7.1` - **MCP** - do not expose the real API key in media and auth tool output - fix #2146
+
+📊 **Dashboard**
+- `2026.7.2` - session info in session details, copy button in Event Monitor
+- `2026.7.1` - Passkey UI - extension-assisted pairing with manual DevTools fallback
+- `2026.7.1` - fix image emoji
+
+⚙️ **Updates**
+- `2026.7.2` - **NOWEB** - up engine
+- `2026.7.2` - **WEBJS** - up Chrome to `140.0.7339.207`
+- `2026.7.1` - **WEBJS** - up engine
+- `2026.7.1` - **GOWS** - up engine
+- `2026.7.1` - **NOWEB** - up engine
+- `2026.7.1` - **WPP** - up engine
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.6
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2026.6.3` - **GOWS** - `WAHA_CLIENT_BROWSER_NAME=Desktop` shows `WAHA_CLIENT_DEVICE_NAME` as the only label in WhatsApp → Linked Devices, with no browser name in front of it - [**⚙️ Configuration**]({{< relref "/docs/how-to/config#sessions---device-name" >}}) - closes #2152
+- `2026.6.1` - **WAHA Plus** features are now part of the **WAHA Core** image - [**WAHA Community**]({{< relref "/blog/waha-2026-6" >}})
+
+🛠️ **Fixes**
+- `2026.6.3` - **GOWS** - `WAHA_GOWS_DEVICE_*` variables were parsed but never applied to the device props
+- `2026.6.2` - **GOWS** - fix document media — 403 on live media + media-retry never completes/refreshes directPath - fix #2131
+
+⚙️ **Updates**
+- `2026.6.2` - **WEBJS** - up engine
+- `2026.6.2` - **GOWS** - up engine
+- `2026.6.2` - **NOWEB** - up engine
+- `2026.6.2` - **WPP** - up engine
+- `2026.6.1` - **GOWS** - up engine
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.5
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2026.5.1` - **GOWS** - Convert Lottie stickers (application/was) to animated WebP - fix #2039
+- `2026.5.1` - **GOWS** - Add `WAHA_GOWS_STATUS_PARTICIPANTS_BATCH_SIZE` env variable for status@broadcast batch size control - fix #2080
+
+🛠️ **Fixes**
+- `2026.5.1` - **WEBJS** - Session stuck in `starting`/`stopped` state due to Node.js Buffer limit with large RemoteAuth entries (PostgreSQL) - fix #2090
+- `2026.5.1` - **WEBJS** - Ignore symlinks for remote storages — **PLUS**
+- `2026.5.1` - **GOWS** - All outbound messages fail with error 400 until session restart - fix #2084
+- `2026.5.1` - **GOWS** - MediaRetry triggers on ciphertext hash mismatch (not only 403) - fix #2085
+- `2026.5.1` - **GOWS** - Fix status@broadcast batch timeouts, default batch size reduced to 500 - fix #2080
+- `2026.5.1` - **GOWS**, **NOWEB** - Send video: fix gif to mp4 format conversion - fix #2077
+- `2026.5.1` - **NOWEB** - message.edit event fix - fix #2072
+- `2026.5.1` - **GOWS** - Sticker download: drop placeholder a.whatsapp.net URL
+- `2026.5.1` - **GOWS** - Handle encrypted message edits - fix #2062
+- `2026.5.1` - **WEBJS** - e2e session and disappearing setting messages - fix #2046
+- `2026.5.1` - **API** - `POST /api/{session}/chats/overview` — require pagination - fix #2070
+
+**📊 Dashboard**
+- `2026.5.1` - Dashboard - WEBJS e2e session and disappearing messages settings support - fix #2046
+
+⚙️ **Updates**
+- `2026.5.1` - **GOWS** - up engine
+- `2026.5.1` - **NOWEB** - up engine
+- `2026.5.1` - **WPP** - up engine
+- `2026.5.1` - Dashboard - up
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.4
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2026.4.3` - [**🧩 MCP**]({{< relref "/docs/apps/mcp" >}}) - fix #1925
+- `2026.4.3` - **API Key** - [**🔒 Session Key Scopes**]({{< relref "/docs/how-to/security#session-key-scopes" >}}) (read/send/etc) - fix #2035
+- `2026.4.3` - **API** - `GET /api/{session}/new-message-id` - generate message ID before sending
+- `2026.4.3` - **NOWEB**, **GOWS** - Provide message ID in send request - fix #2054
+- `2026.4.3` - **Auth** - [**🔒 Use `?x-api-key` query parameter**]({{< relref "/docs/how-to/security#use-x-api-key-query-parameter" >}}) for authentication
+- `2026.4.1` - **All engines** - Add `replyTo.media` to messages - populate quoted media when available
+
+**🧩 Apps**
+- `2026.4.3` - [**🧩 MCP**]({{< relref "/docs/apps/mcp" >}}) - fix #1925
+- `2026.4.1` - Calls App - add wait before decline and response
+- `2026.4.1` - Apps - allow disabling an app at runtime
+
+**🧩 ChatWoot**
+- `2026.4.2` - Disable new version messages by sending "queue stop check.version" - fix #2025
+- `2026.4.2` - fix agent name even when disabled - fix #2030
+- `2026.4.1` - support WhatsApp status replies — append status context and attach quoted status media - fix #1995, fix #1991
+- `2026.4.1` - conditional agent name prefix — skip `**: ` when sender name is empty - fix #1983, fix #1737
+- `2026.4.1` - fix LID contact sending failure — strip device part from LID JID - fix #1985
+- `2026.4.1` - normalize LID device part on read to unblock existing contacts
+
+🛠️ **Fixes**
+- `2026.4.3` - **GOWS** - Add tctoken lifecycle - fix #2050
+- `2026.4.3` - **NOWEB** - Fix missing Facebook and Instagram ADs messages - fix #1922
+- `2026.4.3` - **GOWS** - Fix "Sessions take a long time to start after server restart" - fix #2012
+- `2026.4.3` - **GOWS** - Fix 403 on some media download - use re-upload request from the phone for this - fix #2049
+- `2026.4.1` - **NOWEB** - MongoDB `GET /api/messages` timestamp range filter (`gte` + `lte` combined) not respected - fix #2011
+- `2026.4.1` - Fix `WHATSAPP_FILES_LIFETIME` 32-bit `setTimeout` overflow causing immediate file deletion - fix #2018, fix #2019
+- `2026.4.1` - **GOWS** - await group response when starting a new session - fix #2012
+- `2026.4.1` - **GOWS** - `GET /api/messages` — messages sent via `POST /api/sendFile` not returned - fix #1998
+- `2026.4.1` - **GOWS** - `/chats/overview` `"no such column: jid"` error - fix #2009
+- `2026.4.1` - **WEBJS** - fix "window is undefined" - fix #1990
+- `2026.4.1` - **WEBJS** - fix loading messages - fix #2005, fix #2013
+- `2026.4.1` - **WEBJS** - fix `call.received` event - fix #2014
+- `2026.4.1` - **WEBJS** - populate `replyTo` with more fields
+- `2026.4.1` - **WEBJS** - ignore reactions older than 2 days - mention #494
+- `2026.4.1` - **WEBJS** - try both `fromMe: true/false` when fetching DM message by id
+- `2026.4.1` - **WEBJS** - treat status messages as `fromMe` when fetching by id
+- `2026.4.1` - **NOWEB** - fallback to message id lookup when JID+id not found
+- `2026.4.1` - **NOWEB** - use stream mode for media download to fix 0-byte audio/voice files - fix #1996
+- `2026.4.1` - Increase media resolve timeout to ~12 s total
+- `2026.4.1` - Exclude `/jobs` from global Swagger basic auth - fix #1679
+
+**📊 Dashboard**
+- `2026.4.1` - Dashboard - Chat UI: media preview, message history, show more chats in overview
+- `2026.4.1` - Dashboard - fix empty sender name for automated messages - fix #1983
+
+⚙️ **Updates**
+- `2026.4.3` - **NOWEB** - up engine
+- `2026.4.3` - **GOWS** - up engine
+- `2026.4.1` - **NOWEB** - up proto to `2.3000.1035920091`
+- `2026.4.1` - **WEBJS** - up engine
+- `2026.4.1` - **WPP** - up engine
+- `2026.4.1` - **GOWS** - up engine
+- `2026.4.1` - ChatWoot - up to `4.12.1`
+- `2026.4.1` - autodetect OS and browser
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.3
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+**🆕 New**
+- `2026.3.3` - **GOWS** - Add image sizes in messages - fix #1402, fix #901
+- `2026.3.3` - **GOWS** - Add `WAHA_GOWS_DEVICE_*` env variables for historical message sync depth - fix #1963
+- `2026.3.3` - **GOWS** - Add `displayName` to `sendContactVcard` - fix #1978
+- `2026.3.3` - **NOWEB** -  Add view once messages in `message` event - fix #1972
+- `2026.3.3` - **NOWEB** - Add image size when sending to newsletter - fix #1980
+- `2026.3.1` - **WPP** - Add [**WPP**]({{< relref "/docs/how-to/engines" >}}) engine - fix #101
+- `2026.3.1` - **NOWEB** - `merge` flag to disable merging `@lid` and `@c.us` messages and chats
+  - fix #1444, fix #1419, fix #1683, fix #1432
+- `2026.3.1` - **GOWS** - `merge` flag to disable merging `@lid` and `@c.us` messages and chats
+  - fix #1684, fix #1817, fix #1910
+- `2026.3.1` - **WPP** - `forwardMessages` support
+- `2026.3.1` - Storage - `WAHA_NAMESPACE` and `WAHA_SESSION_NAMESPACE` for storage namespace control - [**🗄️ Storages**]({{< relref "/docs/how-to/storages#namespace" >}})
+- `2026.3.1` - **API** - `GET /api/{session}/contacts/{id}` endpoint
+
+**🧩 Apps**
+- `2026.3.1` - Apps enabled by default, allow in-memory apps (no queue required)
+
+**🧩 ChatWoot**
+- `2026.3.1` - ChatWoot - sync only `@c.us` chat when both `@lid` and `@c.us` are present in messages sync
+- `2026.3.1` - ChatWoot - add group participant to message mapping
+- `2026.3.1` - ChatWoot - fix `ParseMS` typing
+
+🛠️ **Fixes**
+- `2026.3.4` - version fix - fix #1984
+- `2026.3.3` - Fix BR landline normalization for Brazilian landline numbers - fix #1974
+- `2026.3.3` - **GOWS** - Fix no device part - fix #1977
+- `2026.3.3` - **API** - Fix "Cannot read properties of undefined (reading 'isAdmin')" - fix #1969
+- `2026.3.3` - **WEBJS** - Fix profile picture and channels list - fix #1707, fix #1947, fix #1959
+- `2026.3.3` - **NOWEB** - Fix CPU spikes (lid/c.us merge optimization) - fix #1955
+- `2026.3.3` - **GOWS** - Fix CPU spikes in PostgreSQL - fix #1955
+- `2026.3.3` - yarn - support all CPU/OS architectures - fix #1952
+- `2026.3.2` - send media fix for "user_agents_1.default is not a constructor" - fix #1946
+- `2026.3.1` - **NOWEB** - merge `@lid` and `@c.us` messages in `/overview` and `/messages` 
+  - fix #1444, fix #1419, fix #1683, fix #1432
+- `2026.3.1` - **GOWS** - merge `@lid` and `@c.us` in `/messages`, `/overview`, `/chats` 
+  - fix #1684, fix #1817, fix #1910
+- `2026.3.1` - **NOWEB** - fix out-of-order messages - fix #1912
+- `2026.3.1` - **NOWEB** - fix message ordering (timestamp first)
+- `2026.3.1` - **NOWEB** - populate `@lid`↔`@c.us` mapping correctly - fix #1712
+- `2026.3.1` - **NOWEB** - fix PostgreSQL request
+- `2026.3.1` - **WEBJS** - fix QR Code - fix #1923, fix #1918
+- `2026.3.1` - **WEBJS** - fix apps `GET`/`PUT`/`DELETE` 403 - fix #1926
+- `2026.3.1` - **WEBJS** - kill stale processes and remove Singleton
+- `2026.3.1` - Fix no auth case - fix #1939
+- `2026.3.1` - Channels - resolve channel code or use provided id
+- `2026.3.1` - Media - fix user-agent when fetching media
+
+**📊 Dashboard**
+- `2026.3.1` - Dashboard - Chat UI improvements
+
+⚙️ **Updates**
+- `2026.3.3` - **NOWEB** - up engine
+- `2026.3.3` - **WPP** - up engine
+- `2026.3.3` - **WEBJS** - up engine
+- `2026.3.3` - **GOWS** - up engine
+- `2026.3.1` - **NOWEB** - up engine
+- `2026.3.1` - **NOWEB** - up Rust bridge - fix #1919
+- `2026.3.1` - **GOWS** - up engine - fix link preview 406 User-Agent - fix #1914
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.2
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+**🧩 ChatWoot**
+- `2026.2.2` - ChatWoot - strip escaped newlines from v4.10.1+ webhooks so WhatsApp messages render without backslashes - fix #1833
+
+🛠️ **Fixes**
+- `2026.2.2` - **NOWEB** - edit text in Channels (image/video doesn't work yet) - fix #1352
+- `2026.2.2` - **NOWEB** - edit media message captions - fix #1374
+- `2026.2.2` - **NOWEB** - fix WhatsApp template with an image - fix #1886
+- `2026.2.2` - **NOWEB** - fix send message to group community - fix #1901
+- `2026.2.2` - **NOWEB** - add seconds to video messages - fix #1893
+- `2026.2.2` - **GOWS** - add seconds to video messages - fix #1893
+- `2026.2.2` - **GOWS** - edit media message - fix #1852
+- `2026.2.2` - **WEBJS** - " Lid is missing in chat table" - fix #1824
+- `2026.2.2` - **WEBJS** - "No LID for user" - fix #1881
+- `2026.2.2` - **API** - harden auth middleware, WebSocket guard, and policies guard - fix #1899
+- `2026.2.1` - **WEBJS** - fix GET groups internal error - fix #1860
+- `2026.2.1` - **WEBJS** - fix send message to channel - fix #1863
+- `2026.2.1` - **WEBJS** - fix contact update - fix #1839
+- `2026.2.1` - **WEBJS** - fix get groups count - fix #1879
+- `2026.2.1` - **WEBJS** - fix get groups failed - fix #1873
+- `2026.2.1` - **API** - add `chatId` param to `POST /api/{session}/presence` - fix #1842
+- `2026.2.1` - **NOWEB** - fix send image using proxy - fix #1859
+- `2026.2.1` - **GOWS** - exclude `AppState` events
+
+**📊 Dashboard**
+- `2026.2.2` - Dashboard - fix creating apps - `crypto.randomUUID is undefined`
+
+⚙️ **Updates**
+- `2026.2.2` - **NOWEB** - up engine
+- `2026.2.2` - **GOWS** - up engine
+- `2026.2.1` - **WEBJS** - up engine
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2026.1
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2026.1.5` - **GOWS** - disable storage - fix #823
+- `2026.1.4` - **Webhook** - add `worker.id` to payload - fix #1840
+- `2026.1.4` - **API** - per-session API Keys - fix #387, fix #937, fix #1642, fix #1772
+  - [**📊 Dashboard - API Keys**]({{< relref "/docs/how-to/dashboard#api-keys" >}})
+  - [**🔒 Security - Keys API**]({{< relref "/docs/how-to/security#keys-api" >}})
+- `2026.1.2` - **GOWS** - receive and send video notes - fix #1798
+- `2026.1.2` - **NOWEB** - receive video note media
+
+**🧩 ChatWoot**
+- `2026.1.4` - ChatWoot - use chat id from incoming message to support `@lid` and `@c.us`
+- `2026.1.4` - ChatWoot - add delay config - fix #1828
+- `2026.1.3` - **WEBJS** - fix delete message - fix #1769
+- `2026.1.3` - fix sending attachments with no caption in a group chat - fix #1808
+- `2026.1.3` - remove `@lid` when mention it - fix #1803
+- `2026.1.2` - support `@lid` mention directly - fix #1767
+- `2026.1.2` - support `@mention` and `@all` in group messages - fix #1767
+- `2026.1.2` - handle not found app - fix #1290 fix #1790
+
+🛠️ **Fixes**
+- `2026.1.5` - **WEBJS** - no incoming messages - fix #1855 
+- `2026.1.5` - **WEBJS** - error in `/chats` - fix #1856
+- `2026.1.4` - **WEBJS** - fix 500 error on `getChats` - fix #1834
+- `2026.1.4` - **GOWS** - send data to subscribers in `setImmediate`
+- `2026.1.4` - **GOWS** - increase events to 1000 in buffer - fix #1837
+- `2026.1.4` - **API** - optimize session list API
+- `2026.1.3` - **WEBJS** - fix `api/sendText` - fix #1810
+- `2026.1.3` - **WEBJS** - get chats use `AUTHENTICATED` - fix #1782
+- `2026.1.2` - **WEBJS** - fix send media to channels - fix #1775
+- `2026.1.2` - **API** - allow `@all` with other mentions for groups (participants resolved anyway)
+- `2026.1.2` - **GOWS** - start sessions in the background
+- `2026.1.2` - **GOWS** - stop sessions before gRPC shutdown - fix #1784
+- `2026.1.2` - **Core** - avoid double `session.status` events - fix #1784
+- `2026.1.2` - add `associatedChildMessage` to edited messages - fix #1773
+- `2026.1.1` - **GOWS** - make session `/stop` a bit more stable - fix #1749
+- `2026.1.1` - **WEBJS** - fix can not read properties of null - client - fix #1763 closes #1764
+
+⚙️ **Updates**
+- `2026.1.4` - **NOWEB** - up engine
+- `2026.1.4` - **GOWS** - up engine
+- `2026.1.3` - **GOWS** - up engine `1.0.30`
+- `2026.1.3` - **NOWEB** - up proto `1031716404`
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+### 2025
+
+#### 2025.12
+
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2025.12.3` - **WEBJS, GOWS, NOWEB** - add device and browser config - fix #1109
+- `2025.12.2` - **WEBJS** - Add [**📶 Polls**]({{< relref "docs/how-to/polls" >}}) API and events - fix #189
+- `2025.12.2` - add dedicated `message.ack.group` event for [**👥 Groups**]({{< relref "/docs/how-to/groups" >}}) message ack
+- `2025.12.1` - **API** - [**📞 Reject Call API**]({{< relref "/docs/how-to/calls#reject-call" >}}) - fix #608 fix #1258
+  - **WEBJS, GOWS, NOWEB**
+- `2025.12.1` - **WEBJS** - Add `call.rejected` event when rejected via API
+- `2025.12.1` - **GOWS** - Add `call` events - fix #1673
+
+**🧩 Apps**
+- `2025.12.1` - [**🧩 Calls App**]({{< relref "/docs/apps/calls" >}}) to reject calls and send reply messages - fix #1694
+- `2025.12.1` - [**🧩 Apps API**]({{< relref "/docs/apps/about#api" >}}) and [**🖥️ Sessions - Apps**]({{< relref "/docs/how-to/sessions#apps" >}}) to manage apps via API
+- `2025.12.1` - `WAHA_APPS_ON` and `WAHA_APPS_OFF` to control which apps to enable (so it doesn't require redis for chatwoot)
+
+**🧩 ChatWoot**
+- `2025.12.2` - add Italian translations - closes #1722
+- `2025.12.1` - add [**📞 Calls**]({{< relref "/docs/how-to/calls" >}}) messages
+- `2025.12.1` - fix symbols in the middle of text - fix #1643
+- `2025.12.1` - `config.conversations.markAsRead` - fix #1650
+
+🛠️ **Fixes**
+- `2025.12.3` - **GOWS, NOWEB** - motion_video (WhatsApp Live Photo / Motion Photo) messages are not supported - fix #1754
+- `2025.12.3` - **WEBJS** - fix empty `/me` when `WORKING` session - fix #1735
+- `2025.12.2` - **GOWS** - gRPC client per session and pool for clients - fix #1715
+- `2025.12.2` - **NOWEB** - MongoDB - use separate keys for each key - fix #1713
+- `2025.12.2` - **NOWEB** - fix `poll.vote` for `@lid` - fix #1688
+- `2025.12.2` - **Webhook** - ignore SSL errors - mention #1717
+- `2025.12.2` - **GOWS** - fix message duplications - closes #1718 fix #1564 fix #1564
+- `2025.12.2` - **GOWS** - missing messages fix
+- `2025.12.1` - **WEBJS** - fix stuck in `SCAN_QR_CODE` - fix #1690 closes #1695
+- `2025.12.1` - **NOWEB** - fix `poll.vote` for `@lid` - fix #1688
+
+**📊 Dashboard**
+- `2025.12.2` - add Italian translations
+
+⚙️ **Updates**
+- `2025.12.3` - **GOWS** - up engine - fix #1746
+- `2025.12.2` - up **WEBJS**
+- `2025.12.2` - up **GOWS**
+- `2025.12.2` - up **NOWEB**
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+#### 2025.11
+{{< autolink-issues repo=devlikeapro/waha >}}
+{{< autolink-prs repo=devlikeapro/waha >}}
+
+🆕 **New**
+- `2025.11.2` - Auto `online` [**✅ Presence**]({{<relref "docs/how-to/presence" >}}) - fix #1584 closes #1586
+- `2025.11.2` - **Config** - `WAHA_SQLITE_ENGINE` lets Knex pick [`sqlite3`](https://github.com/TryGhost/node-sqlite3) or [`better-sqlite3`](https://github.com/WiseLibs/better-sqlite3) for local data 
+    - [**⚙️ Configuration**]({{< relref "/docs/how-to/config#sessions-local" >}})
+- `2025.11.1` - **API** - mention everyone in groups with `mentions: ["all"]` - fix #1377
+    - **WEBJS, GOWS, NOWEB**
+- `2025.11.1` - **API** - `/api/:session/groups/:id/participants/v2`
+  - **WEBJS, GOWS, NOWEB**
+
+🛠️ **Fixes**
+- `2025.11.4` - **GOWS** - cap gRPC responses at 128MB to avoid oversized payloads
+- `2025.11.4` - **GOWS** - webhook `requestId` uses `uniqid` and logs the event
+- `2025.11.4` - **ALL** - Disable CPU profiling when `WAHA_DEBUG_MODE=true` - fix #1681
+- `2025.11.4` - **GOWS** - send and send media via file (core & PLUS) - fix #1639
+- `2025.11.3` - **GOWS** - fix file sent by me - fix #1630
+- `2025.11.3` - **GOWS** - fix memory leak - fix #1639
+- `2025.11.3` - **GOWS** - fix DNS resolving `127.0.0.11:53: i/o timeout` - fix #1649
+  - You can switch between dns resolver using [**⚙️ Configuration**]({{< relref "/docs/how-to/config#gows" >}})
+- `2025.11.3` - **WEBJS** - fix pairing code - fix #1651
+- `2025.11.3` - **GOWS** - reuse one gRPC client for all sessions (per-session streams) for stability
+- `2025.11.3` - **GOWS** - 10-minute deadline for media fetch to avoid stuck downloads
+- `2025.11.2` - **API** - `mentions: ["all"]` for media - image, video, files
+- `2025.11.2` - **GOWS, NOWEB** - location and vcards in `message` event - fix #1609
+- `2025.11.2` - **ALL** - voice convertor - fix #1549
+  - `opustags` required for metadata cleanup (if you don't use official docker image, check [Dockerfile](https://github.com/devlikeapro/waha-plus/blob/dev/Dockerfile)
+- `2025.11.1` - **WEBJS** - forward messages - fix #1546
+- `2025.11.1` - **WEBJS** - update contact name - fix #1583
+- `2025.11.1` - **API** - Exclude `/ping` (and `/health` using `WAHA_API_KEY_EXCLUDE_PATH`) from Swagger auth - fix #1562
+- `2025.11.1` - **Dashboard** - fix Chat UI - fix #1602
+- `2025.11.1` - **GOWS** - mention support - fix #1372
+- `2025.11.1` - **GOWS** - raise gRPC payload limit to 512MB - fix #1365
+- `2025.11.1` - **GOWS** - Ignore status@broadcast for ack updates - fix #1557
+- `2025.11.1` - **GOWS** - Fix `poll.vote.failed` - fix #1561, fix #1570
+
+**🧩 ChatWoot**
+- `2025.11.3`  - fix empty conversations - fix #1525 fix #1646
+- `2025.11.3`  - fix contact name with 255 symbols - fix #1556
+
+⚙️ **Updates**
+- `2025.11.4` - **WEBJS** - engine update - fix #1678
+- `2025.11.4` - **Node.js** `24.11` - fix #1639
+- `2025.11.3` - **WEBJS** - engine update - fix #1662
+- `2025.11.3` - **Dashboard** - app id is UUID now
+- `2025.11.2` - **GOWS** - stability update
+- `2025.11.2` - **NOWEB** - stability update for local storage
+- `2025.11.1` - **GOWS** - engine update
+- `2025.11.1` - **WEBJS** - engine update
+- `2025.11.1` - **NOWEB** - engine update
+
+{{< /autolink-prs >}}
+{{< /autolink-issues >}}
+
+#### 2025.10
+📢 **BREAKING CHANGE** 📢
+
+In `2025.10.3`:
+
+- Requires `WAHA_API_KEY`, `WAHA_DASHBOARD_PASSWORD`, `WHATSAPP_SWAGGER_PASSWORD` and generate one if no provided.
+- Treats "00..00", "123", "admin", "waha" as not secure
+- Check [**🔒 How To Disable Security?**]({{< relref "/docs/how-to/security/#how-to-disable-security" >}}) if you 100% knows you don't need one of this.
+- {{< issue 1501 >}}
+
+---
+
+🛠️ **Fixes**
+
+- `2025.10.5` - **WEBJS** - normalize message reaction senders so ChatWoot gets correct actor - {{< issue 1545 >}}
+- `2025.10.5` - **WEBJS** - fix `/messages` pagination offset
+- `2025.10.5` - **NOWEB** - ignore history sync notifications to cut noise in logs
+- `2025.10.5` - **NOWEB** - increase sqlite timeouts to avoid lock errors
+- `2025.10.4` - fix ffmpeg voice converter to `mp3` - {{< issue 1393 >}}, {{< issue 1453 >}}
+- `2025.10.4` - **NOWEB**, **GOWS** - better handle `message.edited` events - {{< issue 1394 >}}
+- `2025.10.4` - **NOWEB** - fix sending media to channels - {{< issue 1523 >}}
+- `2025.10.4` - **WEBJS** - handle `convert: true` voice conversions - {{< issue 1453 >}}, {{< issue 1524 >}}
+- `2025.10.3` - **NOWEB** - fix `/api/sendImage` when using proxy - {{< issue 1449 >}}
+- `2025.10.3` - **GOWS** - fix `sql: database is locked` - {{< issue 1503 >}}
+- `2025.10.2` - **NOWEB** - connection issues - {{< issue 1499 >}}, {{< issue 1495 >}}
+- `2025.10.1` - **GOWS** - fix no webhooks - {{< issue 1456 >}}
+- `2025.10.1` - **WEBJS** - fix /about - {{< issue 1469 >}}
+- `2025.10.1` - **NOWEB** - fix empty body - {{< issue 1459 >}}
+- `2025.10.1` - **NOWEB** - fix ssl on media - {{< issue 1474 >}}
+
+**🧩 ChatWoot**
+
+- `2025.10.5`  - `wa/messages pull` - {{< issue 1231 >}}
+  - [**💬 ChatWoot - Messages Guide**]({{< relref "/blog/apps-chatwoot-5-messages" >}})
+- `2025.10.5` -  - `wa/contacts pull` - {{< issue 1231 >}}
+  - [**👤 ChatWoot - Contacts Guide**]({{< relref "/blog/apps-chatwoot-6-contacts" >}})
+- `2025.10.5` - Album Message - {{< issue 1405 >}}
+- `2025.10.5` - ChatWoot queues via dashboard commands, smarter limits, and duplicate guards
+- `2025.10.4` - Fix inverted logic of messages read in ChatWoot (closes devlikeapro/waha-plus#20)
+- `2025.10.4` - Preserve underscores inside URLs so markdown stays intact - {{< issue 1522 >}}
+- `2025.10.3` - Render List Message
+- `2025.10.3` - Handle `{device}@lid` in groups - {{< issue 1493 >}}
+- `2025.10.2` - Supress chat read errors for now - temp fix - {{< issue 1492 >}}
+- `2025.10.2` - No retries/success messages - temp fix - {{< issue 1395 >}}
+- `2025.10.2` - Ignore `fromMe` in `message.ack` handler - {{< issue 1492 >}}
+- `2025.10.1` - Mark messages as Read in ChatWoot - {{< issue 1319 >}}, {{< issue 1436 >}}
+- `2025.10.1` - Event, Poll, PIX messages - {{< issue 1460 >}}
+- `2025.10.1` - Add Facebook Ads message - {{< issue 1461 >}}
+- `2025.10.1` - **WEBJS** - fix + in phone - {{< issue 1475 >}}
+
+**⚙️ Updates**
+
+- `2025.10.5` - Add `sortOrder` and `sortBy` to `/messages` API for custom sorting
+- `2025.10.5` - **GOWS** - update engine, use context
+- `2025.10.5` - **ChatWoot** - upgrade bundled app to `4.7.0` 
+- `2025.10.5` - **NOWEB** **MongoDB** - message lookups by chat id
+- `2025.10.4` - **NOWEB** - up engine - {{< issue 1538 >}}
+- `2025.10.4` - **Dashboard** - refreshed headers and agent name display
+- `2025.10.1` - **NOWEB** - up engine
+
+#### 2025.9
+
+**🆕 NEW**
+
+- `2025.9.5` - **WEBJS** - `POST /api/sendContactVcard` - {{< issue 1341 >}}
+- `2025.9.4` - add `statuses` to `session.status` [**🔄 Events**]({{< relref "/docs/how-to/events#sessionstatus" >}}) - 3 recent statuses with timestamp
+- `2025.9.3` - [**🖥️ Sessions - Ignore**]({{< relref "/docs/how-to/sessions#ignore" >}}) 📡 Broadcast support, `WAHA_SESSION_CONFIG_IGNORE_BROADCAST` env variable - {{< issue 1346 >}}
+- `2025.9.2` - **Dashboard** - Show WAHA_API_KEY warning
+
+**🧩 Apps**
+
+- `2025.9.8` - **ChatWoot** - Send CSAT {{< issue 1228 >}}
+- `2025.9.7` - **ChatWoot** - fix Brazil phone if **9** at the start - {{< issue 1261 >}}
+- `2025.9.6` - **ChatWoot** - [**Conversation Control**]({{< relref "/docs/apps/chatwoot#conversations" >}})
+  - {{< issue 1216 >}}, {{< issue 1357 >}}, {{< issue 1237 >}}, {{< issue 1343 >}}, {{< issue 1213 >}}
+- `2025.9.6` - **ChatWoot** - fix Duplicating Audio Message When Automatically transcribe audio enabled - {{< issue 1371 >}}
+- `2025.9.6` - **ChatWoot** - add `ChatWootAppConfig` to OpenAPI - {{< issue 1416 >}}
+- `2025.9.6` - **ChatWoot** - add additional **9** in Brazil phone numbers - {{< issue 1261 >}}
+- `2025.9.6` - **ChatWoot** - check contact attributes before updating - {{< issue 1173 >}}
+- `2025.9.6` - **ChatWoot** - Use group name for contact - {{< issue 1245 >}}
+- `2025.9.5` - **ChatWoot** - group participant at the top by default or [**Language Template - Group Participant At The Bottom**]({{< relref "/docs/apps/chatwoot#language" >}}) - {{< issue 1369 >}}
+- `2025.9.4` - **ChatWoot** - skip `STARTING => WORKING` messages if the session recovers fast (10 seconds) - {{< issue 1342 >}}
+- `2025.9.3` - **ChatWoot** - [**Language Template - Agent Name**]({{< relref "/docs/apps/chatwoot#language" >}}) - {{< issue 1161 >}}
+- `2025.9.3` - **ChatWoot** - [**Language Template - Integration Contact Name**]({{< relref "/docs/apps/chatwoot#language" >}}) - {{< issue 1160 >}}
+- `2025.9.3` - **ChatWoot** - disable "server" commands - {{< issue 1182 >}}
+- `2025.9.3` - **ChatWoot** - temporally disable app - {{< issue 1260 >}}
+- `2025.9.3` - **ChatWoot** - link preview config: no, low, high quality 
+  - {{< issue 1162 >}}, {{< issue 1274 >}}
+- `2025.9.3` - **ChatWoot** - Share Contact message - {{< issue 1175 >}}
+- `2025.9.3` - **ChatWoot** - Location message - {{< issue 1205 >}}
+- `2025.9.3` - **ChatWoot** - Unsupported messages - {{< issue 1267 >}}
+- `2025.9.3` - **ChatWoot** - Receive Broadcast List message - {{< issue 1321 >}}
+
+🛠️ **Fixes**
+
+- `2025.9.8` - **NOWEB** - fix freeze when apps enabled - {{< issue 1397 >}}
+- `2025.9.8` - **GOWS** - fix panic - {{< issue 1421 >}}, {{< issue 1430 >}}
+- `2025.9.8` - **NOWEB** - fix send poll to channels - {{< issue 1270 >}}, {{< issue 1415 >}}
+- `2025.9.8` - **NOWEB** - fix failed poll votes - {{< issue 1396 >}}
+- `2025.9.6` - **ChatWoot** - fix `/jobs` auth - {{< issue 1398 >}}
+- `2025.9.6` - **ChatWoot** - fix 500 API Error `GET /public/conversations - timeout` - {{< issue 1389 >}}
+- `2025.9.5` - **GOWS** - Fix "typing" after message sent - {{< issue 1364 >}}
+- `2025.9.5` - **NOWEB** - Fix login via phone - {{< issue 1385 >}}
+- `2025.9.5` - **NOWEB** - Fix `fromMe` in group messages - {{< issue 1350 >}}
+- `2025.9.4` - **ChatWoot** - Fix blank card PDF message - {{< issue 1330 >}}
+- `2025.9.4` - **ChatWoot** - Fix blank card on receiving Audio message - {{< issue 1340 >}}
+- `2025.9.3` - **WEBJS** - add `--disable-blink-features=AutomationControlled` - {{< issue 1348 >}}
+- `2025.9.3` - **WEBJS** - add `WAHA_WEBJS_PUPPETER_ARGS` to add custom puppeter args (for testing primarily)
+  - `WAHA_WEBJS_PUPPETER_ARGS=--single-process` - {{< issue 1348 >}}
+- `2025.9.3` - **ChatWoot** - Fix blank card PDF message - {{< issue 1330 >}}
+- `2025.9.3` - **ChatWoot** - Fix blank card on receiving Audio message - {{< issue 1340 >}}
+- `2025.9.2` - **NOWEB** - Fix `message.any` with `fromMe: 1`
+  - {{< issue 1318 >}}, {{< issue 1338 >}}
+- `2025.9.1` - **WEBJS** - fix STARTING session issue 
+  - {{< issue 1301 >}}, {{< issue 1315 >}}, {{< issue 1314 >}}, {{< issue 1312 >}}
+
+**⚙️ Updates**
+
+- `2025.9.8` - **GOWS** - update to `v1027949008` - {{< issue 1293 >}}, {{< issue 1412 >}}, {{< issue 1406 >}}
+- `2025.9.8` - **WEBJS** - up engine - {{< issue 1276 >}}, {{< issue 1407 >}}
+- `2025.9.8` - **NOWEB** - up engine to `2025-10-03` - {{< issue 1442 >}}
+- `2025.9.5` - **WEBJS** - up engine to `2025-09-10`
+- `2025.9.5` - **NOWEB** - update engine to `7.0.0` with ESM support
+- `2025.9.5` - **NOWEB** - proto to `v1027393660`
+- `2025.9.5` - **GOWS** - update to `v1027043088`
+- `2025.9.3` - **WEBJS** - up chrome (140.0.7339.80-1) and puppeter (24.19.0)
+- `2025.9.3` - **NOWEB** - update proto to `v1025985905`
+
+#### 2025.8
+
+**🆕 NEW**
+- `2025.8.3` - [**🖥️ Sessions - Ignore**]({{< relref "/docs/how-to/sessions#ignore" >}}) chats - [**🟢 Status**]({{< relref "/docs/how-to/status" >}}), [**👥 Groups**]({{< relref "/docs/how-to/groups" >}}), [**📢 Channels**]({{< relref "/docs/how-to/channels" >}})
+  - {{< issue 1142 >}}, {{< issue 1190 >}}, {{< issue 1259 >}}
+- `2025.8.3` - **Dashboard** - Add copy session name button - {{< issue 1004 >}}
+- `2025.8.3` - [**WEBJS**]({{< relref "/docs/engines/webjs" >}}) - add `config.webjs.tagsEventsOn` 
+- `2025.8.3` - **GOWS** - add [**💬 Chats** - Unread Chat]({{< relref "/docs/how-to/chats#unread-chat" >}})
+- `2025.8.2` - Add [**Send List Message API**]({{< relref "/docs/how-to/send-messages#send-list" >}})  
+  - **NOWEB**, **GOWS**
+  - Available in [**➕ WAHA Plus**]({{< relref "/docs/how-to/waha-plus" >}})
+  - {{< issue 393 >}}, {{< issue 482 >}}, {{< issue 715 >}}, {{< issue 938 >}}
+- `2025.8.2` - **GOWS** - [**📶 Send Poll Vote API**]({{< relref "docs/how-to/polls#send-poll-vote" >}}) - {{< issue 1077 >}}
+  - Works with **DM**, **👥 Groups**, and [**📢 Channels**]({{< relref "/docs/how-to/channels#send-poll-vote-to-the-channel" >}})
+- `2025.8.2` - **GOWS** - add `/api/sendLocation` - {{< issue 1250 >}}
+- `2025.8.2` - **Dashboard** - add **Simplified Chinese** - {{< issue 1193 >}}
+
+**🧩 Apps**
+
+- `2025.8.3` - **ChatWoot** - [**🖥️ Sessions - Ignore**]({{< relref "/docs/how-to/sessions#ignore" >}}) chats [**🟢 Status**]({{< relref "/docs/how-to/status" >}}), [**👥 Groups**]({{< relref "/docs/how-to/groups" >}}), [**📢 Channels**]({{< relref "/docs/how-to/channels" >}})
+    - {{< issue 1142 >}}, {{< issue 1190 >}}, {{< issue 1259 >}}
+- `2025.8.2` - **ChatWoot** - add **Simplified Chinese** - {{< issue 1193 >}}
+- `2025.8.2` - **ChatWoot** - fix link preview for big files - {{< issue 1162 >}}
+
+🛠️ **Fixes**
+
+- `2025.8.3` - **WEBJS** - fix STARTING session issue 
+  - {{< issue 1298 >}}, {{< issue 1299 >}}, {{< issue 1300 >}}
+- `2025.8.3` - **GOWS** - Create Channel with no picture - {{< issue 1293 >}}
+- `2025.8.3` - **WEBJS** - fix stability issues
+- `2025.8.3` - **Dashboard** - Fix execute request problem - {{< issue 1004 >}}
+- `2025.8.2` - **GOWS** - fix sending [**📶 Polls**]({{< relref "docs/how-to/polls" >}}) to [**📢 Channels**]({{< relref "/docs/how-to/channels" >}}) - {{< issue 1114 >}}
+- `2025.8.2` - **GOWS** - fix sending to [**🟢 Status**]({{< relref "/docs/how-to/status" >}}) (filter out right contacts) 
+  - {{< issue 1002 >}}, {{< issue 1204 >}}, {{< issue 413 >}}
+- `2025.8.2` - **GOWS** - fix poll `poll.fromMe` detection - {{< issue 1028 >}}
+- `2025.8.2` - **GOWS** - fix set group description - {{< issue 1014 >}}
+- `2025.8.2` - **GOWS** - debug "Error getting message" if not found - {{< issue 1174 >}}
+- `2025.8.2` - add `me.lid` - **GOWS**, **NOWEB**
+- `2025.8.1` - **WEBJS** - fix create group - {{< issue 1145 >}}
+- `2025.8.1` - **NOWEB** - fix channel list - {{< issue 1177 >}}
+- `2025.8.1` - limited characters in the session name - {{< issue 1163 >}}
+
+
+**⚙️ Updates**
+
+- `2025.8.3` - **GOWS** - up engine and proto to `v1025985905`
+
+#### 2025.7
+**🆕 NEW**
+
+- `2025.7.11` - Add languages (i18n) on [**📊 Dashboard**]({{< relref "/docs/how-to/dashboard" >}})
+- `2025.7.8` - Add [**👤 Update Contact API**]({{< relref "/docs/how-to/contacts#update-contact" >}}) - {{< issue 1124 >}}
+  - **WEBJS**, **GOWS**, **NOWEB**
+- `2025.7.5` - Add [**🧩 ChatWoot App**]({{< relref "/docs/apps/chatwoot" >}}) - {{< issue 441 >}}
+- `2025.7.2` - **WEBJS** - Add `GET /api/server/debug/browser/trace` API to [**🔍 Observability**]({{< relref "/docs/how-to/observability" >}})  - {{< issue 1092 >}}
+- `2025.7.2` - **WEBJS** - `--a-waha-session` and `--a-waha-timestamp` to chrome/chromium args - {{< issue 1092 >}}
+
+**🧩 Apps**:
+- `2025.7.11` - **ChatWoot** - fix @lid issue - find first by chat id
+- `2025.7.11` - **ChatWoot** - add **Udru** language
+- `2025.7.8` - **ChatWoot** - send `png` as image, not as attachment
+- `2025.7.5` - Add [**🧩 ChatWoot App**]({{< relref "/docs/apps/chatwoot" >}}) - {{< issue 441 >}}
+
+🛠️ **Fixes**
+- `2025.7.11` - **WEBJS** - Fix "You provided 'null' where a stream was expected" - {{< issue 1178 >}}
+- `2025.7.10` - **GOWS** - speed up sending a message to groups - {{< issue 1100 >}}
+- `2025.7.10` - **NOWEB** - do not freeze server in a lot of sessions case (use regular `sqlite3`)
+- `2025.7.9` - **WEBJS** - add `WAHA_RUN_XVFB=False` parameter - {{< issue 1151 >}}
+- `2025.7.9` - adjust `UV_THREADPOOL_SIZE` values (`cpu*2` or min is `4`)
+- `2025.7.7` - **WEBJS** - add browser cache - {{< issue 1131 >}}, {{< issue 1140 >}}
+- `2025.7.6` - **WEBJS** - fix **send seen** and **send read messages** - {{< issue 1117 >}}
+- `2025.7.5` - **WEBJS** - ignore old reactions on connection - {{< issue 494 >}}
+- `2025.7.5` - **WEBJS** - increase rendering processes to 2
+- `2025.7.4` - **NOWEB** - handle [**👤 Lids**]({{< relref "/docs/how-to/contacts/#api---lids" >}}) on first message 
+  - {{< issue 1073 >}}, {{< issue 1097 >}}
+- `2025.7.4` - **NOWEB** - fix some connection issues 
+  - {{< issue 531 >}}, {{< issue 1098 >}}
+- `2025.7.4` - **WEBJS** - increase `protocolTimeout` to 300s - {{< issue 1103 >}}
+- `2025.7.4` - **WEBJS** - fix some `STARTING => FAILED` sessions - {{< issue 1071 >}}
+- `2025.7.4` - **GOWS** - Fix [**🟢 Status**]({{< relref "/docs/how-to/status" >}}) to 10K contacts - {{< issue 1058 >}}
+- `2025.7.3` - **GOWS** - fix generating preview links youtu.be
+- `2025.7.3` - **GOWS** - fix fetching media for some messages
+- `2025.7.3` - **GOWS** - reconnect on session start if any network error happens
+- `2025.7.3` - **GOWS** - fix stuck in `STARTING` 
+  - {{< issue 1043 >}}, {{< issue 1068 >}}, {{< issue 1094 >}}
+- `2025.7.3` - **WEBJS** - disable GPU
+- `2025.7.2` - **WEBJS** - limit renderer process to **1** - {{< issue 1092 >}}
+- `2025.7.2` - remove healthcheck and `ping-check.sh` script - {{< issue 1085 >}}
+- `2025.7.1` - move `HEALTHCHECK` from Dockerfile to docker-compose - {{< issue 1090 >}}
+
+**⚙️ Updates**
+- `2025.7.9` - **NOWEB** - up proto to `v1025126393`
+- `2025.7.4` - **NOWEB** - up engine to `2025-07-04`
+- `2025.7.3` - **GOWS** - up engine and proto to `v1024307498`
+
+#### 2025.6
+**🆕 NEW**
+- `2025.6.5` - [**🔒 Security**]({{< relref "/docs/how-to/security" >}}) now available in **WAHA Core** - {{< issue 1069 >}}
+- `2025.6.5` - Support hash in Api Key variable `WAHA_API_KEY=sha512:{HASH}` in [**🔒 API Key Security**]({{< relref "/docs/how-to/security" >}}) - {{< issue 1069 >}}
+- `2025.6.3` - Add `message.edited` to [**🔄 Events**]({{< relref "/docs/how-to/events#messageedited" >}}) - {{< issue 916 >}}, {{< issue 1041 >}}
+  - **WEBJS**, **GOWS**, **NOWEB**
+  - ⚠️ **NOWEB** - removed an edited **protocol message** from `message` and `message.any`, now listen `message.edited` instead
+- `2025.6.3` - **GOWS** Add `message.revoked` to [**🔄 Events**]({{< relref "/docs/how-to/events#messagerevoked" >}}) - {{< issue 917 >}}
+- `2025.6.3` - Add `revokedMessageId` field to `message.revoked` to [**🔄 Events**]({{< relref "/docs/how-to/events#messagerevoked" >}})
+- `2025.6.2` - Add `convert: true` flag (`false` by default) to `/api/sendVoice` and `/api/sendVideo` - {{< issue 724 >}}
+- `2025.6.2` - Add API to convert voice and video files before sending it - {{< issue 724 >}}
+  - [**POST /api/{session}/media/convert/voice**]({{< relref "/docs/how-to/send-messages#media---convert-voice" >}})
+  - [**POST /api/{session}/media/convert/video**]({{< relref "/docs/how-to/send-messages#media---convert-video" >}})
+  - No more `ffmpeg` required, just use `convert: true` or convert API!
+
+🛠️ **Fixes**
+- `2025.6.7` - fix `curl: command not found` in healthcheck - {{< issue 1085 >}}
+  - `:noweb` and `:gows` docker images
+- `2025.6.6` - **NOWEB** - show poll on the sender device - {{< issue 988 >}}
+- `2025.6.6` - **WEBJS** - return message response - {{< issue 1083 >}}
+- `2025.6.6` - **WEBJS** - fix pin message - {{< issue 1081 >}}, {{< issue 1082 >}}
+- `2025.6.6` - **WEBJS** - fix zombie processes - {{< issue 1078 >}}
+- `2025.6.6` - Return `501 Not Implemented` if engine does not support API - {{< issue 1047 >}}
+- `2025.6.4` - **NOWEB** - fix *continuous loop of state synchronization* - {{< issue 1054 >}}
+- `2025.6.3` - Add `timeout` for `AsyncLock` to prevent long queues
+  - **NOWEB** - has a lot of it
+  - **WEBJS**, **GOWS** - some API for session management
+- `2025.6.3` - **WEBJS** - add `Xvfb` to container {{< issue 1032 >}}
+- `2025.6.2` - **WEBJS** - fix disconnection issues {{< issue 1032 >}}
+- `2025.6.1` - **GOWS** - fix memory leak {{< issue 919 >}}
+- `2025.6.1` - **WEBJS** - fix [**👥 Groups**]({{< relref "/docs/how-to/groups" >}}) management issues
+  - {{< issue 1023 >}}, {{< issue 1024 >}}, {{< issue 1025 >}}, {{< issue 1026 >}}, {{< issue 1027 >}}
+
+**⚙️ Updates**
+- `2025.6.2` - **WEBJS** - update chrome, puppeter
+- `2025.6.1` - **GOWS** - up engine to **2025.06.09** version
+- `2025.6.1` - **WEBJS** - up engine to **2025.06.09** version
+
+#### 2025.5
+**🆕 NEW**
+- `2025.5.5` - **WEBJS** - [**✅ Presence**]({{<relref "docs/how-to/presence" >}}) API and Events - {{< issue 636 >}}
+- `2025.5.5` - **GOWS** - [**📶 Polls**]({{< relref "docs/how-to/polls" >}}) support - {{< issue 899 >}}
+- `2025.5.5` - Filter chats by `ids` in [**💬 Chats - Get Chats Overview**]({{< relref "/docs/how-to/chats#get-chats-overview" >}}) API - {{< issue 791 >}}
+- `2025.5.4` - Add [**👤 Contacts - Lids API**]({{< relref "/docs/how-to/contacts/#api---lids" >}}) to map `@lid` to `@c.us` - {{< issue 957 >}}
+  - **WEBJS**, **NOWEB**, **GOWS** 
+- `2025.5.4` - **GOWS** - [**🏷️ Labels**]({{< relref "docs/how-to/labels" >}}) support - {{< issue 922 >}} 
+- `2025.5.4` - **GOWS** - add `POST /api/sendContactVcard` support - {{< issue 902 >}}
+
+🛠️ **Fixes**
+- `2025.5.6` - Fix fetch media from S3/PostgreSQL - {{< issue 1007 >}}
+- `2025.5.5` - Subscribe [**✅ Presence**]({{<relref "docs/how-to/presence" >}}) on each request 
+  - **WEBJS**, **NOWEB**, **GOWS** 
+- `2025.5.5` - **WEBJS** - hide "Fresh Look" modal form {{< issue 987 >}}
+- `2025.5.5` - **WEBJS** - add `tini` to docker to handle zombie processes {{< issue 990 >}}
+- `2025.5.5` - **Local Storage** - fix empty session name issues when calling logout or delete
+- `2025.5.5` - fix pairing Business Accounts connected to official Meta API - {{< issue 864 >}}
+  - **NOWEB**, **GOWS** 
+- `2025.5.4` - **PostgreSQL** - use `5432` port by default if not provided {{< issue 975 >}}
+- `2025.5.4` - **NOWEB** - fix "async-lock timed out in queue" error on session actions {{< issue 831 >}}
+- `2025.5.3` - **NOWEB** - fix `poll.vote` event - {{< issue 960 >}}
+- `2025.5.2` - **GOWS** - fix pairing Business Accounts connected to official Meta API - {{< issue 864 >}}
+- `2025.5.2` - **NOWEB** - fix pairing via code {{< issue 961 >}}
+- `2025.5.2` - **GOWS** and **NOWEB** - fix "undefined senderKeyDistributionMessage" error
+- `2025.5.2` - protect **PostgreSQL** media with an API key
+- `2025.5.2` - minor security update
+- `2025.5.1` - **NOWEB** - fix syncing for accounts with many messages/contacts - {{< issue 952 >}}
+  - [**🗄️ Storages**]({{< relref "/docs/how-to/storages" >}}): **Local**, **PostgreSQL**, **MongoDB** 
+- `2025.5.1` - **NOWEB** - no duplicate `message.ack` for a single message - {{< issue 948 >}}
+- `2025.5.1` - **WEBJS** - fix potential connection leak to storages - {{< issue 952 >}}
+- `2025.5.1` - **WEBJS** - fix adding/removing participant to group - {{< issue 944 >}}
+- `2025.5.1` - **WEBJS** - fix sorting groups in `/chats` and `/chats/overview` - {{< issue 915 >}}
+
+**⚙️ Updates**
+- `2025.5.5` - update nestjs - fixes `DeprecationWarning: The 'util.isObject' API is deprecated`
+
+#### 2025.4
+`2025.4.2`
+
+**🆕 NEW**
+- Add [**💬 Chats - Read messages**]({{< relref "/docs/how-to/chats#read-messages" >}}) API to mark unread messages as read {{< issue 783>}}
+  - **WEBJS**, **NOWEB**, **GOWS**
+- Add `filter.ack` to [**💬 Chats - Get messages**]({{< relref "/docs/how-to/chats#get-messages" >}}) API
+  - **WEBJS**, **NOWEB**, **GOWS**
+- **WEBJS** - add `message.ack` events for [**👥 Groups**]({{< relref "/docs/how-to/groups" >}}) and [**🟢 Status**]({{< relref "/docs/how-to/status" >}}) messages
+  - {{< issue 495 >}}, {{< issue 900 >}}
+- **WEBJS** - add `message._data.receipts` in [**💬 Chats** - **Get message by id**]({{< relref "/docs/how-to/chats#get-message-by-id" >}}) [**👥 Groups**]({{< relref "/docs/how-to/groups" >}}) and [**🟢 Status**]({{< relref "/docs/how-to/status" >}}) 
+  - It shows all receipts (ack status) for the message
+  - {{< issue 495 >}}, {{< issue 900 >}}
+- Read multiple messages by using `messageIds` in [**POST /api/sendSeen**]({{< relref "/docs/how-to/send-messages#send-seen" >}}) API
+  - **NOWEB**, **GOWS**
+
+🛠️ **Fixes**
+- **NOWEB** - update message status on `/api/sendSeen` - {{< issue 635 >}}
+- **NOWEB** - fix "Cannot read properties of undefined (reading 'protocolMessage')" - {{< issue 932 >}}
+- **WEBJS** - restart browser on **ProtocolError** and **Promise was collected**
+  - {{< issue 244 >}}, {{< issue 714 >}}, {{< issue 685 >}}, {{< issue 936 >}}
+- **NOWEB** - Fix `ack` for new messages (it was `UNKNOWN`, now it's `DEVICE`)
+- **GOWS** - send `DEVICE` `message.ack` for all groups participants
+- Fix **sending** messages to **anonymous groups** (one with `@lid` participants)
+  - **NOWEB**
+  - **GOWS**
+- Fix **receiving** messages to **groups** and **status** (some messages were missed)
+  - **NOWEB**
+  - **GOWS**
+
+**⚙️ Updates**
+
+- **NOWEB** - update engine to the latest version
+- **GOWS** - update engine to the latest version
+- **WEBJS**  - update
+  - **puppeter** (all images)
+  - **chrome** (`devlikeapro/waha-plus:chrome`and `devlikeapro/waha:chrome` images)
+
+---
+
+`2025.4.1`
+- Fix Send Reaction to [**📢 Channels**]({{< relref "/docs/how-to/channels#send-reaction-to-the-channel" >}}) - {{< issue 889 >}}
+  - **GOWS**, **NOWEB**
+- [**📤 Send Link Custom Preview**]({{< relref "/docs/how-to/send-messages#send-link-custom-preview" >}}) - {{< issue 880 >}}, {{< issue 596 >}}
+  - **GOWS**, **NOWEB**
+- **GOWS** - fix Send Reaction to other participants messages {{< issue 894 >}}
+
+---
+
+#### 2025.3
+`2025.3.3`
+- **GOWS** - fix timeout on chat overview - {{< issue 881 >}}, {{< issue 878 >}}
+- **NOWEB** - cache presence data for 1 minute
+
+`2025.3.2`
+- Add [**📤 Button Reply**]({{< relref "/docs/how-to/send-messages#send-buttons-reply" >}}) API - {{< issue 848 >}}
+  - **WEBJS**
+- Add features for [**🔄 Global Webhooks**]({{< relref "/docs/how-to/events#global-webhooks" >}}) - {{< issue 855 >}}
+  - **GOWS**, **NOWEB**, **WEBJS**
+  - Set HMAC using `WHATSAPP_HOOK_HMAC_KEY` environment variable
+  - Set retries using `WHATSAPP_HOOK_RETRIES_*` environment variables
+  - Set custom headers using `WHATSAPP_HOOK_CUSTOM_HEADERS` environment variables
+- **GOWS** - Fix Get Contact `The "original" argument must be of type function` - {{< issue 866 >}}
+- **NOWEB** - fix out of memory when session stuck in `STARTING` statuses
+  - {{< issue 821 >}}, {{< issue 860 >}}, {{< issue 869 >}}
+- **NOWEB** - mark session as `FAILED` if QR code is not scanned in the interval.
+- **NOWEB** - presences optimizations - store presence for 1 hour and fetch new if not accessed
+- Handle sending [**🟢 Status**]({{< relref "/docs/how-to/status" >}}) to 50K contacts - {{< issue 858 >}}
+  - **GOWS**, **NOWEB**
+- Add [**🟢 Status - Get New Status Message ID**]({{< relref "/docs/how-to/status" >}}) - {{< issue 858 >}}
+  - **GOWS**, **NOWEB**
+  - You can use it in  [**Send Status to 10K contacts**]({{< relref "/docs/how-to/status#send-status-to-10k-contacts-manually" >}}) flow
+- Add searches by Name and Phone Number to [**📊Dashboard**]({{< relref "/docs/how-to/dashboard#chat-ui" >}})
+- **GOWS** - extract `replyTo` - {{< issue 876 >}}
+
+
+`2025.3.1`
+- **GOWS** multiple improvements
+  - Enable Link Previews - {{< issue 763 >}}
+  - Delete Status Message - {{< issue 754  >}}
+  - Delete Message - {{< issue 796  >}}
+  - Edit Message - {{< issue 797  >}}
+  - Reply To Message - {{< issue 799  >}}
+  - Add `filename` on `/api/sendFile` - {{< issue 853 >}}
+- `linkPreviewHighQuality: true` for [**📤 Send messages - Link Preview**]({{< relref "/docs/how-to/send-messages#link-preview" >}})
+  - **GOWS**, **NOWEB**
+- Add `event.timestamp` to [**🔄 Events**]({{< relref "/docs/how-to/events" >}}) - {{< issue 755 >}}
+- **NOWEB** - Filter [**📞 Calls**]({{< relref "/docs/how-to/calls" >}}) from `message` event - {{< issue 840 >}}
+- Support **disappearing messages** in [**📤 Send messages**]({{< relref "/docs/how-to/send-messages" >}}) - {{< issue 736 >}}
+  - **GOWS**, **NOWEB**, **WEBJS**
+  - Might require repairing (logout/scan qr) for old chats
+- Add `source: api|app` in [**🔄 Events** - message.any]({{< relref "/docs/how-to/events#messageany" >}}) - {{< issue 787 >}}
+- Add [**👥 Groups Count API**]({{< relref "/docs/how-to/groups#get-groups-count" >}}) - {{< issue 752 >}}
+  - **GOWS**, **NOWEB**, **WEBJS**
+
+#### 2025.2
+`2025.2.8`
+- **WEBJS** - fix empty channels {{< issue 832 >}}
+- Edit message `linkPreview`  {{< issue 833 >}}
+
+`2025.2.7`
+- Add [**👥 Group Picture API**]({{< relref "/docs/how-to/groups#group-picture" >}}) - {{< issue 802 >}}
+  - **WEBJS**, **NOWEB**, **GOWS**
+  - Picture Update available in [**➕ WAHA Plus**]({{< relref "/docs/how-to/waha-plus" >}})
+- **GOWS** - Add [**👥 Group API**]({{< relref "/docs/how-to/groups" >}}) - {{< issue 825 >}}
+- **NOWEB** - Add [**👥 Group Settings API**]({{< relref "/docs/how-to/groups" >}}) - {{< issue 695 >}}, {{< issue 808 >}} 
+- Add `exclude=participants` to [**👥 Get All Groups API**]({{< relref "/docs/how-to/groups#get-all-groups" >}}) - {{< issue 242 >}} 
+  - **WEBJS**, **NOWEB**, **GOWS**
+- **NOWEB** - fix `TypeError: group.participants is not iterable` - {{< issue 810 >}}
+- **NOWEB** - disable auto-restart every 30 mins, restart will happen only on socket error - {{< issue 756 >}}
+
+`2025.2.6`
+- **NOWEB** + **PostgreSQL** - fix `\u0000 - unsupported Unicode escape sequence` - {{< issue 820 >}}
+
+`2025.2.5`
+- **NOWEB** - fix `body: null` or empty `body` in some cases - {{< issue 813 >}}
+- **NOWEB** - add `message.revoked` event
+
+`2025.2.4`
+- Add [**👥 group.v2 events**]({{< relref "/docs/how-to/groups#events" >}}) 
+  - `group.v2.join` - when you join a group
+  - `group.v2.leave` - when you leave a group
+  - `group.v2.participants` - when someone joins, leaves, get promoted or demoted in a group
+  - `group.v2.update` - when group information are updated
+  - **WEBJS**, **NOWEB**, **GOWS** engines
+  - {{< issue 583 >}}, {{< issue 527 >}}, {{< issue 404 >}}
+- **NOWEB** - catch and log unhandled errors  {{< issue 809 >}}
+  
+`2025.2.3`
+- Add [**🆔 Profile API**]({{< relref "/docs/how-to/profile" >}} ) to get and update profile information {{< issue 529 >}} 
+  - **WEBJS**, **NOWEB**, **GOWS** engines
+- Fix `hasMedia` behavior - now when you request messages with `downloadMedia=False`, `hasMedia: true` if message has media
+  - **WEBJS**, **NOWEB**, **GOWS** engines
+
+`2025.2.2`
+- [**📢 Search Public Channels**]({{< relref "/docs/how-to/channels#search-channels-by-view" >}}) API - {{< issue 440 >}}
+  - Available in [**➕ WAHA Plus**]({{< relref "/docs/how-to/waha-plus" >}})
+- [**📢 Get Messages (Preview) From Public Channels**]({{< relref "/docs/how-to/channels##get-messages-from-channel-preview" >}}) API
+  - Available in [**➕ WAHA Plus**]({{< relref "/docs/how-to/waha-plus" >}})
+- **PostgreSQL** - fix `sorry, too many clients already` in some cases
+  - **WEBJS**, **NOWEB**, **GOWS** engines
+- **S3** - fix `headers[headerName].trim is not a function` error {{< issue 790 >}}
+
+`2025.2.1`
+- **GOWS** - [**👤 Contacts**]({{< relref "/docs/how-to/contacts" >}}) API
+- **GOWS** - [**💬 Chats - Get Chats Overview**]({{< relref "/docs/how-to/chats#get-chats-overview" >}}) API
+- **GOWS** - [**💬 Chats - Get Messages**]({{< relref "/docs/how-to/chats#get-messages" >}}) API
+- **NOWEB** - fix group message error {{< issue 765 >}}, {{< issue 766 >}}
+- **GOWS** - fix group message error {{< issue 765 >}}, {{< issue 766 >}}
+
+#### 2025.1
+[**Release Notes**]({{< relref "/blog/waha-2025-1" >}})
+
+`2025.1.6`
+- **WEBJS** - fix send image/video to [**📢 Channels**]({{< relref "/docs/how-to/channels" >}}) - {{< issue 733 >}}
+
+`2025.1.5`
+- **GOWS** - add [**📢 Channels**]({{< relref "/docs/how-to/channels" >}}) API
+- **GOWS** - add [**🟢 Status (aka Stories) API**]({{< relref "/docs/how-to/status" >}}) API
+- **GOWS** - add [**Check Contact exists**]({{< relref "/docs/how-to/contacts" >}}) API
+
+`2025.1.4`
+- [**🖥️ Session Storage - PostgresSQL**]({{< relref "/docs/how-to/storages#sessions---postgresql" >}}) - add support for storing sessions in PostgreSQL
+  - Available in all [**🏭 Engines**]({{< relref "/docs/how-to/engines" >}})!
+- [**🖼️ Media Storage - PostgresSQL**]({{< relref "/docs/how-to/storages#media---postgresql" >}}) - add support for storing media files in PostgreSQL
+  - Available in all [**🏭 Engines**]({{< relref "/docs/how-to/engines" >}})!
+- [**🗄️ Local Storage**]({{< relref "/docs/how-to/storages" >}}) available in **WAHA Core** now - {{< issue 741 >}}
+  - Both **🖥️ Session** and **🖼️ Media** storages
+- **S3**, **PostgreSQL** - add `chat-id` metadata {{< issue 717 >}}
+- **WEBJS** - remove unnecessary flags for chrome/chromium process to increase stability 
+  - {{< issue 685 >}}, {{< issue 714 >}}
+
+`2025.1.3`
+- **GOWS** - add [**🏭 GOWS Engine**]({{< relref "/docs/how-to/engines#gows" >}}) beta version (does not support many features yet) 
+- Lazy QR code png generation (300+ sessions performance issue)
+- Shutdown HTTP server gracefully
+
+`2025.1.2`
+- **NOWEB** - fix corrupted sessions {{< issue 731 >}}
+- Use atomic write for files (**NOWEB** + media files)
+
+`2025.1.1`
+- **NOWEB** - do not save empty creds into file when session stops {{< issue 727 >}}
+- **NOWEB** + **MongoDB** - add descending order for messages
+- Some timeout fixes
+
+### 2024
+
+#### 2024.12
+
+[**Release Notes**]({{< relref "/blog/waha-2024-12" >}})
+
+`2024.12.6`
+- Add [**💬 Get chats overview API**]({{< relref "/docs/how-to/chats#get-chats-overview" >}}) 
+  - **WEBJS**, **NOWEB**
+  - {{< issue 566 >}}
+  - {{< issue 573 >}}
+  - {{< issue 701 >}}
+- Add [**📊 Chat UI to Dashboard**]({{< relref "/docs/how-to/dashboard#chat-ui" >}}) -
+as an example for [**💬 Get chats overview API**]({{< relref "/docs/how-to/chats#get-chats-overview" >}})
+- Add [**💬 Get chat picture API**]({{< relref "/docs/how-to/chats#get-chat-picture" >}}) 
+- Add `refresh` flag to **Get chat picture** and **Get contact picture** API
+- Cache profile picture for 24 hours
+- **WEBJS** - fix "Could not get the quoted message" error when replying to a message - {{< issue 576 >}}
+- **NOWEB** - Fix `not-authorized` on get profile picture {{< issue 381 >}}
+
+`2024.12.5`
+- **NOWEB** - attempt #3 to fix missing messages {{< issue 671 >}}
+
+`2024.12.4`
+- Add [**👥 Join Group API**]({{< relref "/docs/how-to/groups#join-group" >}}) - {{< issue 688 >}}
+
+`2024.12.3`
+- **NOWEB** - use **NOWEB** engine by default in [devlikeapro/waha-plus:noweb]({{< relref "/docs/how-to/engines#docker-images" >}}) - {{< issue 414 >}}
+- **NOWEB** - fix `rate-overlimit` error on groups API {{< issue 462 >}}
+- Add pagination to [**👥 Get Groups API**]({{< relref "/docs/how-to/groups#get-all-groups" >}})
+- Add [**👥 Refresh Groups API**]({{< relref "/docs/how-to/groups#refresh-groups" >}})
+
+`2024.12.2`
+- **NOWEB** - attempt #2 to fix missing messages {{< issue 671 >}}
+
+`2024.12.1`
+- **WEBJS** - fix get channel info by id {{< issue 682 >}}
+- **WEBJS** - fix channel messages {{< issue 683 >}}
+
+#### 2024.11
+`2024.11.11`
+- **NOWEB** - fix 403 on media message {{< issue 667 >}}
+- **WEBJS** - fix channels list and message {{< issue 664 >}}
+
+`2024.11.10`
+- **WEBJS** - fix empty groups and participants {{< issue 670 >}} {{< issue 674 >}}
+
+`2024.11.9`
+- **NOWEB** - attempt to fix missing messages {{< issue 671 >}}
+
+`2024.11.8`
+- **WEBJS** - Fix QR code (set `WAHA_WEBJS_CACHE_TYPE=none` by default) - {{< issue 659 >}}
+
+`2024.11.7`
+- **WEBJS** - Add `WAHA_WEBJS_CACHE_TYPE=none` - ability to disable cache for `WEBJS` engine {{< issue 653 >}}, {{< issue 654 >}}
+  - [**⚙️ Configuration - WEBJS**]({{< relref "/docs/how-to/config#webjs" >}})
+  
+`2024.11.6`
+- Fix **WAHA Core** version {{< issue 645 >}}
+
+`2024.11.5`
+- Add [**📊 Dashboard - Event Monitor**]({{< relref "dashboard#event-monitor" >}}) - observe your events in real-time!
+- All [**🔄 Webhooks**]({{< relref "events#webhooks" >}}) features in **WAHA Core** version now: Retries, HMAC, Custom Headers!
+- [**🔄 Websockets**]({{< relref "events#websockets" >}}) supports all events now {{< issue 535 >}}
+- [**💬 Chats** - **Pin, Unpin message**]({{< relref "/docs/how-to/chats#pin-message" >}}) {{< issue 613>}}
+  - **WEBJS**, **NOWEB**
+- **NOWEB** - fix `me.pushName` after authentication {{< issue 409 >}}
+- Add `engine.event` for debug and troubleshooting
+
+`2024.11.4`
+- **NOWEB** - fix many contacts send status issues {{< issue 390 >}}, {{< issue 413 >}}
+- **NOWEB** - `contacts` list for [**🟢 Status (aka Stories) API**]({{< relref "docs/how-to/status" >}}) is not required anymore
+- **WEBJS** - fix **HTTP ERROR 429** {{<issue 633 >}}
+
+`2024.11.3`
+- add `linkPreview` flag in `POST /api/sendText` to disable generating preview for links {{< issue 596 >}}, {{< issue 598 >}}
+- Fix "Sqlite: attempt to write to read only database" error {{< issue 628 >}}
+- Fix `POST /api/sendVideo` - "TargetCloseError: Protocol error" {{< issue 629 >}}
+
+`2024.11.2`
+- **WEBJS** - fix cases when it stops receiving events (message, message.ack, etc)
+
+`2024.11.1`
+- Create, Update and Delete [**🏷️ Labels**]({{< relref "docs/how-to/labels" >}}) - {{< issue 607 >}}
+  - **WEBJS**, **NOWEB**
+- **WEBJS** - Add [**🟢 Status (aka Stories) API**]({{< relref "docs/how-to/status" >}})
+  - **NOWEB** related issues: {{< issue 390 >}}, {{< issue 413 >}}. You can **WEBJS** for now to handle such cases for now.
+- **NOWEB** + **MongoDB** - fix double message issue - {{< issue 623 >}}
+
+
+#### 2024.10
+`2024.10.13`
+- **NOWEB** - fix waves issue on voice message {{< issue 621 >}}
+- Fix `GET /api/messages` limit {{< issue 620 >}}
+
+`2024.10.12`
+- **WEBJS** - fix `FAILED` session (remove `--single-process`)
+
+`2024.10.11`
+- **WEBJS** + **MongoDB** - Fix `SingletonLock: File exists` error on launch
+
+`2024.10.10`
+- **WEBJS** - Update puppeter and Chrome version
+- **WEBJS** - Set window size to 1280x720
+- **WEBJS** - Fix `SingletonLock: File exists` error on launch
+
+`2024.10.9`
+- Add pagination and filters to [**💬 Chats** - **Get messages from chat**]({{< relref "/docs/how-to/chats#get-messages" >}}) 
+  - **WEBJS** can return messages by a single chat
+  - **NOWEB** can return messages by a chat or `chatId=all`
+  - {{< issue 140 >}}, {{< issue 449 >}}, {{< issue 458 >}}
+- Add [**💬 Chats** - **Get message by id**]({{< relref "/docs/how-to/chats#get-message-by-id" >}}) 
+  - `GET /api/{session}/chats/{chatId}/messages/{messageId}`
+  - {{< issue 159 >}}, {{< issue 484 >}} 
+- Add [**💬 Chats** - Pagination]({{< relref "/docs/how-to/chats#pagination" >}})
+  - {{< issue 371 >}}
+- Add [**👤 Contacts** - Pagination]({{< relref "/docs/how-to/contacts#pagination" >}})
+  - {{< issue 371 >}}
+- Add [**💬 Chats** - Unread Chat]({{< relref "/docs/how-to/chats#unread-chat" >}})
+  - `POST /api/{session}/chats/{chatId}/unread`
+  - **WEBJS**, **NOWEB**
+  - {{< issue 498 >}}
+- **NOWEB** - Fix `/archive` and `/unarchive` chats - [**💬 Chats** - Archive Chat]({{< relref "/docs/how-to/chats#archive-chat" >}})
+  - {{< issue 445 >}}
+- Remove the device from **Connected Devices** on [**🖥️ Session Logout**]({{< relref "/docs/how-to/sessions#logout-session" >}})
+  - **WEBJS**, **NOWEB**
+  - {{< issue 148 >}}, {{< issue 327 >}}, {{< issue 194 >}}, {{< issue 211 >}}
+
+`2024.10.8`
+- Add `WAHA_LOCAL_STORE_BASE_DIR` to allow overriding the base directory for local storage [#597](https://github.com/devlikeapro/waha/issues/597)
+
+`2024.10.7`
+- **WAHA Core** - fix webhooks issue [#595](https://github.com/devlikeapro/waha/issues/595)
+
+`2024.10.6`
+- **WEBJS** + **MongoDB** - reduce CPU usage
+
+`2024.10.5`
+- Add **Send Buttons** API `POST /api/sendButtons` - [$544](https://github.com/devlikeapro/waha/issues/544)
+  - [**📤 Send messages** - Send Buttons]({{<relref "/docs/how-to/send-messages#send-buttons" >}})
+  - **NOWEB**
+- Add **forward message** API `POST /api/forwardMessage` - [#158](https://github.com/devlikeapro/waha/issues/158)
+  - [**📤 Send messages** - Forward Message]({{<relref "/docs/how-to/send-messages#forward-message" >}})
+  - **WEBJS**, **NOWEB**
+- Fix sessions stuck in `STARTING` on container restart - [#586](https://github.com/devlikeapro/waha/issues/586)
+- Add `WAHA_AUTO_START_DELAY_SECONDS=0` environment variable so you can control the delay between sessions
+  - [**⚙️ Configuration** - Sessions]({{<relref "/docs/how-to/config#sessions" >}})
+- Track session status and do not restart it - [#491](https://github.com/devlikeapro/waha/issues/491) 
+- Add workers environment variables: `WAHA_WORKER_ID`, `WAHA_WORKER_RESTART_SESSIONS`
+- Add request id in webhooks headers and logs [#580](https://github.com/devlikeapro/waha/issues/580)
+  - [**🔄 Webhooks** - Headers]({{< relref "events#headers" >}})
+- Add `policy` for webhook retries [#587](https://github.com/devlikeapro/waha/issues/587)
+  - [**🔄 Webhooks** - Headers]({{< relref "events#retries" >}})
+
+`2024.10.4`
+- **NOWEB** - send video note via `POST /api/sendVideo` via `asNote: true`
+- **NOWEB** - handle "sent by advertisement" message properly [#567](https://github.com/devlikeapro/waha/issues/567)
+- **NOWEB** + **MongoDB** - save auth data when stopping session (and container)
+
+`2024.10.3`
+- **WEBJS** + **MongoDB** - handle removing temp folder with retries
+- **WEBJS** - add more logs for state changes to help debugging
+
+`2024.10.2`
+- 📢 **WEBJS** + **MongoDB** setup - handle disconnection properly (it stop saving auth data if connection to mongodb lost)
+
+`2024.10.1` - [**Release Notes**]({{< relref "/blog/waha-2024-10" >}})
+- Receive **media** now available in **WAHA Core** version!
+  - [**📥 Receive messages** - Files]({{<relref "/docs/how-to/receive-messages#files" >}})
+- Add `PORT` environment variable for Heroku deployment - [#555](https://github.com/devlikeapro/waha/issues/555)
+- Add `WAHA_BASE_URL` environment variable to set the base URL for the server for `media.url` links
+- **WEBJS** - Add `message.waiting` event for encrypted but not yet decrypted messages [#554](https://github.com/devlikeapro/waha/issues/554)
+  - [**🔄 Webhooks** - message.waiting]({{< relref "events#messagewaiting" >}})
+  - [https://faq.whatsapp.com/3398056720476987](https://faq.whatsapp.com/3398056720476987)
+- **WEBJS** - handle connectivity issues better, restart client if required [#552](https://github.com/devlikeapro/waha/issues/552)
+- Use `axios` as default library for sending webhooks - solve bad webhooks performance issues for many sessions installation.
+- Handle webhooks retries properly in **WAHA Plus** version (using `axios`)
+
+#### 2024.9
+
+`2024.9.6`
+- **NOWEB** - set session presence (`online|offline`) at the start - [#412](https://github.com/devlikeapro/waha/issues/412)
+  - Affects notifications on your phone (if it's `online` - you won't get in-app notifications on your device)
+- **WEBJS**, **NOWEB** - fix auto restart logic bug
+- **WEBJS** - support pairing via code `POST /api/{session}/auth/request-code` 
+  - Read more [**🖥️ Sessions**]({{< relref "/docs/how-to/sessions#get-pairing-code" >}}) 
+- Retrieve engine info only on detailed `GET /api/sessions/{name}`
+- Check session's status before performing the request in most endpoints
+- **Dashboard** - add login via **QR** and **Code** auth flows
+- **Dashboard, API** - Add `me` for `STOPPED` sessions (account phone number, push name)
+- **Dashboard** - Hide duplicated sessions flag for multiple servers setup (match by `session.name+me.id`)
+
+`2024.9.5`
+- **NOWEB** - fix memory leak and performance problems [#533](https://github.com/devlikeapro/waha/issues/533)
+- **WEBJS** - reduce memory usage for chrome/chromium for ~40MB per session
+- Adjust error message for WAHA Core when session `STOPPED` [#538](https://github.com/devlikeapro/waha/issues/538)
+- Removed `VENOM` engine completely 
+- Add special `/api/server/debug/heapsnapshot` to get heap dump for Node.js by `WAHA_DEBUG_MODE=True`
+
+`2024.9.4`
+- Fix empty config sessions operations (`Session not found`)
+
+`2024.9.3`
+- **NOWEB** - fix restarting issue when websocket is not connected yet (WebSocket was closed before the connection was established)
+
+`2024.9.2`
+- **NOWEB** - fix error on incoming messages - [#521](https://github.com/devlikeapro/waha/issues/521)
+
+`2024.9.1` - [**Release Notes**]({{< relref "/blog/waha-2024-9" >}})
+- Add support for **S3** to store media file - [#353](https://github.com/devlikeapro/waha/issues/353)
+  - Read more [**🗄️ Storages**]({{< relref "/docs/how-to/storages" >}})
+- Add more granular API for [**🖥️ Sessions**]({{< relref "/docs/how-to/sessions" >}}) 
+  - Dedicated `create, update, delete, start, stop, logout, restart` actions!
+  - The old API is working the same way as before for backward compatibility, but marked as **Deprecated**
+  - Related issues: [#435](https://github.com/devlikeapro/waha/issues/435), [#480](https://github.com/devlikeapro/waha/issues/480)
+- Add ability to add your [**Metadata**]({{< relref "/docs/how-to/sessions#metadata" >}}) to a session [#443](https://github.com/devlikeapro/waha/issues/443). 
+  - `metadata` field available in:
+    - [List Sessions]({{< relref "/docs/how-to/sessions#list-sessions" >}}) and [Get Session]({{< relref "/docs/how-to/sessions#get-session" >}})  responses
+    - [**🔄 Webhooks**]({{< relref "events#metadata" >}}) events
+    - [**📊 Dashboard**]({{< relref "dashboard" >}}) for view, and search sessions by metadata
+- Add **Bulk Operations** (start, restart, etc.) for [**📊 Dashboard**]({{< relref "dashboard" >}}) - [#438](https://github.com/devlikeapro/waha/issues/438)
+- Add environment variables on [**📊 Dashboard**]({{< relref "/docs/how-to/dashboard" >}}) - [#319](https://github.com/devlikeapro/waha/issues/319)
+- Add [**🔄 Webhooks - Custom Headers**]({{< relref "/docs/how-to/events#custom-headers" >}}) on [**📊 Dashboard**]({{< relref "/docs/how-to/dashboard" >}})
+- Add `GET /api/server/version` and `/api/server/environment` endpoints
+  - [**🔍 Observability**]({{< relref "/docs/how-to/observability" >}})
+- Validate API request on `/api/sessions/*` endpoints - [#470](https://github.com/devlikeapro/waha/issues/470)
+  - 📢 **Requires attention** - make sure you're sending the right requests
+- Add `POST /api/sendSeen` documentation and correct swagger spec [#485](https://github.com/devlikeapro/waha/issues/485)
+- Add `GET /api/server/status` endpoint to **get server uptime** - [**🔍 Observability**]({{< relref "/docs/how-to/observability" >}})
+- Add `POST /api/server/stop` endpoint to **restart** server - [**🔍 Observability**]({{< relref "/docs/how-to/observability" >}})
+- Add `WHATSAPP_API_SCHEMA=http` environment variable so you can get the right `media.url` link
+- Add `media.error` to messages with media and error - [#510](https://github.com/devlikeapro/waha/issues/510)
+- Add `reply_to` field for text and media (image, files, etc) messages - [#503](https://github.com/devlikeapro/waha/issues/503)
+  - [**📤 Send messages** - reply_to]({{<relref "/docs/how-to/send-messages#reply_to" >}})
+- Add `replyTo` field for receiving message - [#506](https://github.com/devlikeapro/waha/issues/506)
+  - [**📥 Receive messages** - replyTo]({{<relref "/docs/how-to/receive-messages#replyto" >}})
+- Update **NOWEB** engine to the latest upstream changes
+
+#### 2024.8
+`2024.8.5`
+- **NOWEB** - ⚠️ urgent fix [#511](https://github.com/devlikeapro/waha/issues/511)
+
+`2024.8.4`
+- **WEBJS** - fix get `GET /api/{session}/chats?limit=1` "Cannot read properties of undefined (reading 'getChats')" - 
+[#486](https://github.com/devlikeapro/waha/issues/486)
+- **NOWEB** - fix sticker download - [#504](https://github.com/devlikeapro/waha/issues/504)
+
+`2024.8.3`
+- fix restart container with **NOWEB** engine [#483](https://github.com/devlikeapro/waha/issues/483)
+- fix " this.logger.info is not a function" in swagger plus [#496](https://github.com/devlikeapro/waha/issues/496)
+
+`2024.8.2`
+- fix flaky **WEBJS** engine issues (`Failed to add page binding with name ...`)
+- **WEBJS** + **MongoDB** - switch to native `zip` and `unzip` binaries [#465](https://github.com/devlikeapro/waha/issues/465)
+  - If you're not using official docker image install `zip` and `unzip` AND set `WAHA_ZIPPER=ZIPUNZIP` env variable.
+- Add `WAHA_HTTP_LOG_LEVEL=info` variable to control `request completed` log level - [#466](https://github.com/devlikeapro/waha/issues/466) - [**🔍 Observability**]({{< relref "/docs/how-to/observability" >}})
+
+`2024.8.1` - [**Release Notes**]({{< relref "/blog/waha-2024-8" >}})
+- Add [**🏷️ Labels**]({{< relref "docs/how-to/labels" >}}) support [#318](https://github.com/devlikeapro/waha/issues/318)
+- Add [**📞 Calls**]({{< relref "docs/how-to/calls" >}}) events [#307](https://github.com/devlikeapro/waha/issues/307)
+- Add [**chat.archive**]({{< relref "docs/how-to/events#chatarchive" >}}) event [#434](https://github.com/devlikeapro/waha/issues/434)
+- Add [**Archive and Unarchive chat endpoints**]({{< relref "docs/how-to/chats" >}})  [#434](https://github.com/devlikeapro/waha/issues/434)
+- Add "sessions.name" index for MongoDB storage [#447](https://github.com/devlikeapro/waha/issues/447)
+- Add `WHATSAPP_API_KEY_EXCLUDE_PATH` to exclude URI from key auth [#451](https://github.com/devlikeapro/waha/issues/451) - [**🔒 Security**]({{< relref "/docs/how-to/security" >}})
+- Add `GET /ping` endpoint to just touch the service (no checks like in `GET /health` is done during that) - [**🔍 Observability**]({{< relref "/docs/how-to/observability" >}})
+
+----
+
+#### 2024.7
+
+- `2024.7.7` - **WEBJS** + **MongoDB** fix - `unexpected end of file` [#457](https://github.com/devlikeapro/waha/issues/457)
+- `2024.7.6` - **WEBJS** restart fix [#444](https://github.com/devlikeapro/waha/issues/444)
+- `2024.7.5` - [**📰 WhatsApp Channels**]({{< relref "/docs/how-to/channels" >}})
+- `2024.7.4` - **NOWEB** fix profile picture [#422](https://github.com/devlikeapro/waha/issues/422)
+- `2024.7.3` - added JSON logging format - [**🔍 Observability**]({{< relref "/docs/how-to/observability" >}}). 
+- `2024.7.2` - **WEBJS** create group fix [#416](https://github.com/devlikeapro/waha/issues/416)
+- `2024.7.1` - **WEBJS** urgent update [#399](https://github.com/devlikeapro/waha/issues/399)
+
+----
+
+#### 2024.6
+#### 📢 Breaking changes
+
+----
+
+Docker image has been renamed to `devlikeapro/waha` and `devlikeapro/waha-plus`!
+- Read more about [WAHA Docker images]({{< relref "/docs/how-to/engines#docker-images" >}})
+- Build: `2024.6.2`
+
+----
+
+***🎉 New***
+
+----
+
+Starting `2026.6.1` we publish images with `{version}` tag, so you can pin the version you want to use.
+
+`devlikeapro/waha-plus:chrome-{version}` => `devlikeapro/waha-plus:chrome-2024.6.1`
+
+- Read more about [WAHA Docker images]({{< relref "/docs/how-to/engines#versions" >}})
+- Build: `2024.6.1`
+
+----
+
+Added `limit` and `offset` parameters to `GET /api/{session}/chats` endpoint.
+
+- Read more about [Get all chats]({{< relref "/docs/how-to/chats#get-all-chats" >}})
+- Build: `2024.6.4`
+- Engine: **WEBJS**
+- Engine: **NOWEB**
+
+----
+
+Added Out of the box **HTTPS Support**!
+
+👉 [**Step-by-step guide on how to set up HTTPS for WAHA**]({{< relref "/blog/waha-https" >}})
+
+- Read more about [**🔒 Security**]({{< relref "/docs/how-to/security" >}})
+- Build: `2024.6.5`
+- Issue: [#42](https://github.com/devlikeapro/waha/issues/42)
+- Issue: [#369](https://github.com/devlikeapro/waha/issues/369)
+
+----
+
+Add [Websockets](({{< relref "/docs/how-to/events#websockets" >}})) support!
+
+- Read more about [Websockets]({{< relref "/docs/how-to/events#websockets" >}})
+- Build: `2024.6.7`
+
+----
+
+**🎉 New - NOWEB**
+
+----
+
+You asked it, we did it - **contacts, chats, and messages** endpoints are now available in **NOWEB** engine!
+Please make sure to [Enable NOWEB Store]({{< relref "/docs/engines/noweb#store" >}}) before using these endpoints.
+
+- Build: `2024.6.3`
+- Engine: **NOWEB**
+- [Read more about NOWEB Store]({{< relref "/docs/engines/noweb#store" >}})
+- Issue [#169](https://github.com/devlikeapro/waha/issues/169)
+- Issue [#206](https://github.com/devlikeapro/waha/issues/206)
+- Issue [#217](https://github.com/devlikeapro/waha/issues/217)
+- Issue [#322](https://github.com/devlikeapro/waha/issues/322)
+- Issue [#339](https://github.com/devlikeapro/waha/issues/339)
+
+----
+
+Generate thumbnail preview for video and image messages in **NOWEB** engine.
+- Build: `2024.6.3`
+- Engine: **NOWEB**
+
+----
+
+Fix sending poll response in **NOWEB** engine.
+- Build: `2024.6.1`
+- Engine: **NOWEB**
+- Issue: [#356](https://github.com/devlikeapro/waha/issues/356)
+
+----
+
+Delete status endpoint - [`POST /api/{session}/status/delete`]({{<relref "/docs/how-to/send-messages#delete-status" >}})
+
+- Build: `2024.6.7`
+- Engine: **NOWEB**
+- Issue: [#386](https://github.com/devlikeapro/waha/issues/386)
+
+----
+
+**🎉 New - DASHBOARD**
+
+----
+
+Starting `2024.6.3` [Dashboard]({{< relref "/docs/how-to/dashboard" >}}) is available in **WAHA Core** version!
+
+- Read more about [WAHA Dashboard]({{< relref "/docs/how-to/dashboard" >}})
+- Build: `2024.6.3`
+
+----
+
+Starting `2024.6.3` [Dashboard]({{< relref "/docs/how-to/dashboard" >}}) allows connecting to **multiple WAHA instances**!
+
+- Read more about [WAHA Dashboard]({{< relref "/docs/how-to/dashboard" >}})
+- Build: `2024.6.3`
+
+----
+
+**🐛 Fixes - NOWEB**
+
+
+Sender presence keeps on typing after sending message. 
+- Issue: [#379](https://github.com/devlikeapro/waha/issues/379)
+- Build: `2024.6.6`
+
+----
+
+#### 2024.5
+**🎉 New**
+
+----
+
+Added `WAHA_PRINT_QR` environment variable to control QR code printing (by default `True`). Set `WAHA_PRINT_QR=False` to disable QR code printing.
+- Read more about it on [Configuration]({{< relref "/docs/how-to/config" >}})
+- Issue: [#351](https://github.com/devlikeapro/waha/issues/351)
+- Build: `2024.5.13`
+
+----
+
+[Swagger White Label]({{< relref "/docs/how-to/swagger#white-label" >}}) - show your own brand in the Swagger documentation!
+- Read more about [Swagger White Label]({{< relref "/docs/how-to/swagger#white-label" >}})
+- Issue: [#305](https://github.com/devlikeapro/waha/issues/305)
+- Build: `2024.5.4`
+
+----
+
+**🐛 Fixes**
+
+----
+
+Don't allow to start two sessions with the same name.
+
+Before API allowed to start two sessions with the same name, which could lead to potential problems (no way to stop the first, abandoned session).
+- Issue: [#315](https://github.com/devlikeapro/waha/issues/315)
+- Read more about [start a session](https://waha.devlike.pro/docs/how-to/sessions/#start)
+- Build: `2024.5.3`
+- Engine: **ALL**
+
+----
+
+**🐛 Fixes - WEBJS**
+
+Handling rare errors in MongoDB process for saving and restoring session data.
+- Build: `2024.5.12`
+- Engine: **WEBJS**
+- Commit: [9c398f2](https://github.com/devlikeapro/waha-plus/commit/9c398f26f937bf0de2c43ebb1e032c7a766ca8f7)
+
+----
+
+Fix send video issue `POST /api/sendVideo` in **WEBJS**.
+- Issue: [#321](https://github.com/devlikeapro/waha/issues/321)
+- Issue: [#328](https://github.com/devlikeapro/waha/issues/328)
+- Build: `2024.5.9`
+- Engine: **WEBJS**
+
+----
+
+Use local cache for **WEBJS** engine (versions file).
+- Issue: [#316](https://github.com/devlikeapro/waha/issues/316)
+- Build: `2024.5.4`
+- Engine: **WEBJS**
+
+----
+
+**🐛 Fixes - NOWEB**
+
+Fix `message.ack` event for viewing status (`status@broadcast`) messages.
+
+- Issue: [#329](https://github.com/devlikeapro/waha/issues/329)
+- Build: `2024.5.14`
+
+----
+
+Auto restart **NOWEB** connection every 30 minutes.
+
+- Issue: [#336](https://github.com/devlikeapro/waha/issues/336)
+- Build: `2024.5.14`
+
+----
+
+Set heap memory limit to 16GB for **NOWEB** engine.
+
+- Issue: [#347](https://github.com/devlikeapro/waha/issues/347)
+- Build: `2024.5.12`
+
+----
+
+Add `body` to messages with caption in **NOWEB** engine.
+
+- Build: `2024.5.10`
+
+----
+
+Fix "document with caption" message media issue
+
+- Issue: [#345](https://github.com/devlikeapro/waha/issues/345)
+- Build: `2024.5.10`
+
+----
+
+Important **NOWEB** Engine Update!
+WhatsApp has deprecated the version currently being used in the NOWEB engine
+
+- [Read on Patreon](https://www.patreon.com/posts/important-noweb-104631614)
+- [Read on Boosty](https://boosty.to/wa-http-api/posts/6ccedda7-ddae-413b-b15f-f2f22192c0d8)
+- Build: `2024.5.8`
+- Engine: **NOWEB**
+
+----
+
+#### 2024.4
+**🎉 New**
+
+Add **WAHA Dashboard** - UI to manage your WhatsApp sessions!
+- Read more about [Dashboard]({{< relref "/docs/how-to/dashboard" >}})
+
+----
+
+Add `GET /api/sessions/{session}` endpoint to get information about a specific session.
+- Read more about [Get session information]({{< relref "/docs/how-to/sessions#get-session" >}})
+- Issue: [#300](https://github.com/devlikeapro/waha/issues/300)
+
+----
+
+Implement `GET /api/contacts/profile-picture` for **NOWEB** engine.
+- Read more about [Get contact profile picture](https://waha.devlike.pro/docs/how-to/contacts/#get-contact-profile-picture)
+- Issue: [#298](https://github.com/devlikeapro/waha/issues/298)
+
+----
+
+#### 2024.3
+**🎉 New**
+
+----
+
+Add `message.reaction` webhook in **WEBJS** and **NOWEB** engines
+- Read more about [message.reaction]({{< relref "/docs/how-to/events#messagereaction" >}}) event
+- Issue: [#275](https://github.com/devlikeapro/waha/issues/275)
+
+👉 **NOWEB** engine note - reactions were sent in `'message'` and `'message.any'` events, not it's available **only** in `'message.reaction'`!
+
+----
+
+Add star and unstar message endpoint `PUT /api/star`
+- Read [Star and unstar message]({{< relref "/docs/how-to/send-messages#star-and-unstar-message" >}}) documentation
+- Issue: [#273](https://github.com/devlikeapro/waha/issues/240)
+
+----
+
+Add `PUT /api/{session}/chats/{chatId}/messages/{messageId}` endpoint to **edit** the message.
+- Read more about [Edit message]({{< relref "/docs/how-to/send-messages#edit-message" >}})
+- Issue: [#241](https://github.com/devlikeapro/waha/issues/241)
+
+----
+
+Add `DELETE /api/{session}/chats/{chatId}/messages/{messageId}` endpoint to **delete** the message.
+- Read more about [Delete message]({{< relref "/docs/how-to/send-messages#delete-message" >}})
+- Issue: [#209](https://github.com/devlikeapro/waha/issues/209)
+
+----
+
+Add `POST /api/sendContactVcard` support for **NOWEB** engine.
+- Read more about [Send Contact vCard]({{< relref "/docs/how-to/send-messages#send-contact-vcard" >}})
+- Issue: [#276](https://github.com/devlikeapro/waha/issues/256)
+
+----
+
+Handles `caption` and `filename` right in `POST /api/sendFile`
+- Issue: [#94](https://github.com/devlikeapro/waha/issues/94)
+- Issue: [#133](https://github.com/devlikeapro/waha/issues/133)
+
+----
+
+Add security settings for who can send messages `PUT /api/{session}/groups/{groupId}/settings/security/messages-admin-only`
+- Read [Security - who can send messages]({{< relref "/docs/how-to/groups##security---who-can-send-messages" >}})
+- Issue: [#274](https://github.com/devlikeapro/waha/issues/274)
+
+----
+
+Add `config.debug` field to `POST /api/sessions/start` to enable debug and verbose logs for the session.
+
+----
+
+#### 📢 Breaking changes
+- **NOWEB** - reactions were sent in `'message'` and `'message.any'` events, not it's available **only** in `'message.reaction'`!
+- Add **required body** in `PUT /api/{session}/groups/{groupId}/settings/security/info-admin-only` endpoint.
+```json
+{
+  "adminsOnly": false
+}
+```
+
+- `POST /api/sendContactVcard` doesn't work in **VENOM** anymore (use **NOWEB** engine).
+
+#### 2024.2
+- Add support for [MongoDB as storage for Session data]({{< relref "/docs/how-to/storages" >}})
+- Support persistent file storage for media files - [now you can save media files between container restarts]({{< relref "/docs/how-to/storages#media" >}})
+- If you set `WHATSAPP_FILES_LIFETIME=0` environment variable - media files will be never deleted.
+- Add `GET /api/health` endpoint to [check the health of the service](https://waha.devlike.pro/docs/how-to/observability/)
+
+#### 2024.1
+- Implement [Patron Portal](https://portal.devlike.pro/) where you can get your personal API key and manage your perks.
+  - Read more on [Patreon ->](https://www.patreon.com/posts/waha-patron-97637416)
+  - Read more on [Boosty ->](https://boosty.to/wa-http-api/posts/8319079f-dac1-4179-b954-fcc559097c76)
+
+#### 2024.2
+- Listen for browser disconnected and page close events in **WEBJS** engine [#262](https://github.com/devlikeapro/waha/issues/262)
+
+### 2023
+
+#### 2023.12
+December 2023
+- Add `chatId` field to `GET /api/contacts/check-exists` to help get the right `chatId` for Brazilian numbers.
+Read more about
+  [error sending text to half of Brazilian numbers (every number registered before 2012) ->](https://github.com/devlikeapro/waha/issues/238)
+
+#### 2023.11
+November 2023
+- Add different formats for QR code:
+  1. **binary image** - `GET /api/{session}/auth/qr`
+  2. **base64 image** - `GET /api/{session}/auth/qr` and set `Accept: application/json` header
+  3. **raw** - `GET /api/{session}/auth/qr?format=raw`
+- Add different formats for the screenshot:
+  1. **binary image** - `GET /api/{session}/screenshot`
+  2. **base64 image** - `GET /api/{session}/screenshot` and set `Accept: application/json` header
+- Add `WHATSAPP_SWAGGER_ENABLED=false` so you can hide Swagger documentation (available only in Plus version). [#185](https://github.com/devlikeapro/waha/issues/185)
+- Add dedicated `media` field in webhook payload - now you can know which media is attached to the message.
+```jsonc { title="message" }
+{
+  "event": "message",
+  "session": "default",
+  "payload": {
+    "hasMedia": true,
+    "media": {
+      "url": "http://localhost:3000/api/files/true_11111111111@c.us_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.pdf",
+      "mimetype": "application/pdf",
+      "filename": "file.pdf"
+    }
+  }
+}
+
+```
+- Add `WHATSAPP_DOWNLOAD_MEDIA` environment variable to control media download. Available only in Plus version.
+  - `WHATSAPP_DOWNLOAD_MEDIA=True` - download media
+  - `WHATSAPP_DOWNLOAD_MEDIA=False` - do not download media at all.
+- Add `filename` field for document (file attachments) - the original filename of the document.
+- Add `/api/sendVideo` endpoint to **NOWEB** and **WEBJS** engines. Available only in Plus version.
+- Add security settings for edit group info `GET /api/{session}/groups/{groupId}/settings/security/info-admin-only` - updates the group settings to only allow admins to edit group info (title, description, photo).
+
+#### 2023.10
+October 2023
+- Add `session.status` event for all engines! Now you can get the latest session's status immediately after it changes.
+- Add `message.revoked` event in **WEBJS** engine
+- Add `me` field in webhook payload - now you can know which number is associated with the session
+- Add `enviroment` field in webhook payload - now you can know which environment is used for the session
+
+#### 2023.9
+September 2023
+- Add `GET /api/sessions/{session/me` endpoint so you [can get the phone number associated with the session](https://waha.devlike.pro/docs/how-to/sessions/#get-me)
+- Add [polls support in NOWEB engine](https://waha.devlike.pro/docs/how-to/polls)
+- Add dedicated [Get QR](https://waha.devlike.pro/docs/how-to/sessions/#get-qr) endpoint!
+- Support [pairing method (NOWEB)](https://waha.devlike.pro/docs/how-to/sessions/#get-pairing-code) - you can connect with a code instead of QR.
+- Add string field `ackName: DEVICE|READ|...` in [message.ack payload](https://waha.devlike.pro/docs/how-to/events/#messageack)
+- Support `message.ack` event webhook in **NOWEB** engine
+
+#### 2023.8
+August 2023
+- Added [stories (aka status) endpoints](https://waha.devlike.pro/docs/how-to/send-messages/#send-status-aka-stories) to **NOWEB** engine!
+  - `POST /api/{session}/status/text|image|voice|video` - choose one that suites your!
+- Added [chats endpoints](https://waha.devlike.pro/docs/how-to/chats)
+  - Get all chats - `GET /api/{session/chats`
+  - Delete chat - `DELETE /api/{session/chats/{chatId}`
+  - Get messages from chat - `GET /api/{session/chats/{chatId}/messages?limit=1000?downloadMedia=true`
+  - Clear messages in the chat `DELETE /api/{session/chats/{chatId}/messages`
+- Added `downloadMedia` flag to speed up `GET /api/messages` and `GET /api/{session/chats/{chatId}/messages` performance.
+- Added [set presence endpoint](https://waha.devlike.pro/docs/how-to/presence)!
+  - With `online` presence you can show your status as online [#121](https://github.com/devlikeapro/waha/issues/121)
+  - With `offline` presence you can get notifications for your device [#28](https://github.com/devlikeapro/waha/issues/28)
+- Added security settings for edit group info `PUT /api/{session}/groups/{groupId}/settings/security/info-admin-only` - updates the group settings to only allow admins to edit group info (title, description, photo).
+
+#### 2023.7
+July 2023
+- Now session can have their own [🔄 Webhooks]({{< relref "/docs/how-to/events" >}}) -
+   you can define webhook configuration when you start a session with `POST /api/sessions/start`!
+  - Add HMAC authentication for webhooks
+  - Configure retries
+  - Add you custom headers
+- Added [proxy configuration](https://waha.devlike.pro/docs/how-to/config/#proxy) with supporting proxy authentication.
+  Thanks **puntolino** for the contribution!
+  You can control proxy's settings per session with `POST /api/sessions/start` or globally with environment variables.
+- Added [presence information](https://waha.devlike.pro/docs/how-to/presence) - now you can get online status for
+  a contact by calling endpoints or receiving a webhook event!
+- Now you can mention contact in groups by settings `mentions` field in `POST /api/sendText`
+  [read more about it in Send Messages ->]({{< relref "/docs/how-to/send-messages" >}})
+
+#### 2023.6
+June 2023
+
+Improvements on session management, restarting sessions and more:
+
+- Added `WHATSAPP_RESTART_ALL_SESSIONS=True`: Set this variable to `True` to start all **STOPPED** sessions after
+  container restarts. By default, this variable is set to `False`.
+  - Please note that this will start all **STOPPED** sessions, not just the sessions that were working before the
+    restart. You can maintain the session list by
+    using `POST /api/sessions/stop` with the `logout: True` parameter or by calling `POST /api/sessions/logout` to remove
+    **STOPPED** sessions. You can see all sessions, including **STOPPED** sessions, in the `GET /api/sessions/all=True`
+    response.
+- `WHATSAPP_START_SESSION` now support more than one session! Separate session names by command, and it'll start them
+  ALWAYS after container restart `WHATSAPP_START_SESSION=session1,session2`
+- `WHATSAPP_SWAGGER_CONFIG_ADVANCED=true` enables advanced configuration options for Swagger documentation - you can customize host, port and base URL for the requests.
+  Disabled by default.
+- Added `?all=true` parameter to `GET /api/session?all=True` endpoint - it'll show you ALL session, included
+  **STOPPED**, so you can know which one will be restarted if you set `WHATSAPP_RESTART_ALL_SESSIONS=True` environment variable.
+- Added `POST /api/sessions/logout` that allow you to logout from session - remove saved credentials.
+- Added `logout` boolean parameter to `POST /api/sessions/stop` request that allow you to stop the session AND logout at
+  the same time.
+- Added `engine` field in webhook payload
+
+```jsonc { title="message" }
+{
+  "event": "message",
+  "session": "default",
+  "engine": "WEBJS",
+  "payload": {}
+}
+```
+
+#### 2023.5
+May 2023
+
+- Added new [NOWEB engine]({{< relref "/docs/how-to/engines" >}}). **NOWEB** engine does not require a browser to work
+  with
+  WhatsApp Web, it does so directly using a WebSocket.
+  - Less CPU and RAM usage!
+  - Send Locations API works!
+  - Send Link Preview API works!
+  - ⚠ Read the article before using it [How to avoid blocking ->]({{< relref "/docs/overview/how-to-avoid-blocking" >}}).
+
+#### 2023.4
+March 2023
+
+- Add [Groups API]({{< relref "/docs/how-to/groups" >}})
+- Use Chromium by default instead of Chrome
+
+#### 2023.1
+January 2023
+
+- Added  [Contacts API]({{< relref "/docs/how-to/contacts" >}})
+  - Get all contacts
+  - Get a contact
+  - Get contact "about" (status)
+  - Get contact profile picture
+  - Check number exists (is registered in WhatsApp) - works even if the number is not in the contact list
+  - Block and unblock contact
+
+### 2022
+
+#### 2022.12
+December 2023
+
+- Added `GET /messages/` endpoint to get chat messages [#31](https://github.com/devlikeapro/waha/issues/31)
+- Added `WHATSAPP_SWAGGER_USERNAME` and `WHATSAPP_SWAGGER_PASSWORD` to hide and protect swagger panel.
+
+#### 2022.11
+
+**Please test changes in test environment before update production!!**
+
+**Engine** 
+
+1. WAHA has changed its underlying engine from Venom to Whatsapp Web.JS. It might change the response and webhook's
+   payloads.
+2. Optimize CPU and memory consumption.
+
+**Requests** 
+
+- For all `/api/sessions/` requests use `name` field instead of `sessionName`.
+- For all "chatting" requests use `session` field instead of `sessionName`.
+
+**Sessions** 
+
+Now you don't have to scan QR code each time you run WAHA, WAHA saves it for you! Available only in Plus version.
+
+**Authentication** 
+
+Now you can authenticate all requests for WAHA - use `WHATSAPP_API_KEY=secret` environment variable to set "secret key".
+
+If `WHATSAPP_API_KEY` is set - requests must have `X-Api-Key` header with `secret` value, where `secret` - any random
+secret key.
+
+**Webhooks** 
+
+Instead of setting each webhook via environment variables - we use two environments variables:
+
+- `WHATSAPP_HOOK_URL` - to set a URL
+- `WHATSAPP_HOOK_EVENTS` - to set events that are sent to the URL
+
+**Webhook payload**
+
+The data for webhooks are wrapped inside a new `WAWebhook` object with `event` and `payload` fields to help you identify
+which handler you should call based on `event`.
+
+```jsonc { title="message.any" }
+{
+  "event": "message.any",
+  "payload": {
+  }
+}
+```

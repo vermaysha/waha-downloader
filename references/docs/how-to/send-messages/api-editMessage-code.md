@@ -1,0 +1,83 @@
+<div></div>
+
+{{< tabs "edit-message-api" "language" >}}
+
+{{< tab "cURL" >}}
+```bash { title="Edit Message" }
+curl -X 'PUT' \
+  'http://localhost:3000/api/default/chats/12132132130%40c.us/messages/true_12132132130%40c.us_AAAAAAAAAAAAAAAAAAAA' \
+  -H 'X-Api-Key: yoursecretkey' \
+  -H 'Accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "text": "Hello, world! (edited)",
+  "linkPreview": true
+}'
+```
+{{< /tab >}}
+
+{{< tab "Python" >}}
+```python { title="edit-message.py" }
+import requests
+
+url = "http://localhost:3000/api/default/chats/12132132130%40c.us/messages/true_12132132130%40c.us_AAAAAAAAAAAAAAAAAAAA"
+headers = {
+    "X-Api-Key": "yoursecretkey",
+    "Content-Type": "application/json",
+}
+data = {
+    "text": "Hello, world! (edited)",
+    "linkPreview": True
+}
+
+response = requests.put(url, json=data, headers=headers)
+print(response.json())
+```
+{{< /tab >}}
+
+{{< tab "JavaScript" >}}
+```javascript { title="edit-message.js" }
+const axios = require('axios');
+
+const url = "http://localhost:3000/api/default/chats/12132132130%40c.us/messages/true_12132132130%40c.us_AAAAAAAAAAAAAAAAAAAA";
+const data = {
+    text: "Hello, world! (edited)",
+    linkPreview: true
+};
+const headers = {
+    'X-Api-Key': 'yoursecretkey',
+    'Content-Type': 'application/json',
+};
+
+axios.put(url, data, { headers })
+    .then(response => console.log(response.data))
+    .catch(error => console.error(error));
+```
+{{< /tab >}}
+
+{{< tab "PHP" >}}
+```php { title="edit-message.php" }
+<?php
+$url = "http://localhost:3000/api/default/chats/12132132130%40c.us/messages/true_12132132130%40c.us_AAAAAAAAAAAAAAAAAAAA";
+$data = [
+    "text" => "Hello, world! (edited)",
+    "linkPreview" => true
+];
+
+$ch = curl_init($url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'X-Api-Key: yoursecretkey',
+    'Content-Type: application/json',
+]);
+$response = curl_exec($ch);
+curl_close($ch);
+
+echo $response;
+?>
+```
+{{< /tab >}}
+
+{{< /tabs >}}
