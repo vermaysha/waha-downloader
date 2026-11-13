@@ -6,44 +6,55 @@ const WHATSAPP_JID_SUFFIX_RE = /@(c\.us|lid|s\.whatsapp\.net)$/i;
 const VALID_DOMAIN_RE =
   /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 
+export type RequesterPayload = Pick<WahaMessagePayload, "from" | "participant">;
+
+export type DeleteCookieResult =
+  | { status: "deleted"; domain: string }
+  | { status: "not_found"; domain: string }
+  | { status: "invalid" };
+
+export interface CookieProfileStore {
+  save(
+    payload: RequesterPayload,
+    rawDomain: string,
+    content: string,
+  ): Promise<string | null>;
+  list(payload: RequesterPayload): Promise<string[]>;
+  delete(
+    payload: RequesterPayload,
+    rawDomain: string,
+  ): Promise<DeleteCookieResult>;
+  resolvePathForUrl(
+    payload: RequesterPayload,
+    url: string,
+  ): Promise<string | null>;
+}
+
 /**
  * Extracts and normalizes the Requester's phone number from DM or group payloads.
  */
-export function normalizeRequester(
-  payload: Pick<WahaMessagePayload, "from" | "participant">,
-): string | null {
+export function normalizeRequester(payload: RequesterPayload): string | null {
   const raw = payload.participant?.trim() || payload.from?.trim();
   if (!raw) {
     return null;
   }
   const stripped = raw.replace(WHATSAPP_JID_SUFFIX_RE, "").trim();
-  if (!stripped || stripped.includes("/") || stripped.includes("\\") || stripped.includes("..")) {
+  if (
+    !stripped ||
+    stripped.includes("/") ||
+    stripped.includes("\\") ||
+    stripped.includes("..")
+  ) {
     return null;
   }
   return stripped;
 }
 
 /**
- * Extracts and normalizes the target URL's domain (lowercase, leading `www.` stripped).
- */
-export function normalizeDomain(rawUrl: string): string | null {
-  try {
-    const parsed = new URL(rawUrl);
-    const host = parsed.hostname.toLowerCase().replace(/^www\./, "");
-    if (!host || host.includes("/") || host.includes("\\") || host.includes("..")) {
-      return null;
-    }
-    return host;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Validates and normalizes a raw domain argument (lowercase, leading `www.` stripped).
+ * Validates and normalizes a domain or hostname (lowercase, leading `www.` stripped).
  * Rejects empty strings, paths, and traversal sequences.
  */
-export function normalizeCookieDomain(rawDomain: string): string | null {
+export function normalizeDomain(rawDomain: string): string | null {
   const trimmed = rawDomain.trim();
   if (
     !trimmed ||
@@ -62,137 +73,117 @@ export function normalizeCookieDomain(rawDomain: string): string | null {
   return normalized;
 }
 
-function resolveRequesterDir(
-  cookiesDir: string,
-  payload: Pick<WahaMessagePayload, "from" | "participant">,
-): string | null {
-  const requester = normalizeRequester(payload);
-  if (!requester) {
+/**
+ * Extracts and normalizes the target URL's domain (lowercase, leading `www.` stripped).
+ */
+export function extractNormalizedDomain(rawUrl: string): string | null {
+  try {
+    const parsed = new URL(rawUrl);
+    return normalizeDomain(parsed.hostname);
+  } catch {
     return null;
   }
+}
+
+/**
+ * Creates a Cookie Profile store scoped to a root `cookiesDir` directory.
+ */
+export function createCookieStore(cookiesDir: string): CookieProfileStore {
   const rootDir = resolve(cookiesDir);
-  const requesterDir = resolve(rootDir, requester);
-  if (!requesterDir.startsWith(`${rootDir}${sep}`)) {
-    return null;
-  }
-  return requesterDir;
-}
 
-function resolveCookieFileTarget(
-  cookiesDir: string,
-  payload: Pick<WahaMessagePayload, "from" | "participant">,
-  rawDomain: string,
-): { domain: string; requesterDir: string; filePath: string } | null {
-  const requesterDir = resolveRequesterDir(cookiesDir, payload);
-  const domain = normalizeCookieDomain(rawDomain);
-  if (!requesterDir || !domain) {
-    return null;
-  }
-  const filePath = resolve(requesterDir, `${domain}.txt`);
-  if (!filePath.startsWith(`${requesterDir}${sep}`)) {
-    return null;
-  }
-  return { domain, requesterDir, filePath };
-}
-
-/**
- * Saves a Requester's Cookie Profile for a validated, normalized domain.
- */
-export async function saveCookieProfile(
-  cookiesDir: string,
-  payload: Pick<WahaMessagePayload, "from" | "participant">,
-  rawDomain: string,
-  content: string,
-): Promise<string | null> {
-  const target = resolveCookieFileTarget(cookiesDir, payload, rawDomain);
-  if (!target) {
-    return null;
-  }
-  await mkdir(target.requesterDir, { recursive: true });
-  await writeFile(target.filePath, content, "utf8");
-  return target.domain;
-}
-
-/**
- * Lists normalized domains for all Cookie Profiles stored for a Requester.
- */
-export async function listCookieProfiles(
-  cookiesDir: string,
-  payload: Pick<WahaMessagePayload, "from" | "participant">,
-): Promise<string[]> {
-  const requesterDir = resolveRequesterDir(cookiesDir, payload);
-  if (!requesterDir) {
-    return [];
+  function resolveRequesterDir(payload: RequesterPayload): string | null {
+    const requester = normalizeRequester(payload);
+    if (!requester) {
+      return null;
+    }
+    const requesterDir = resolve(rootDir, requester);
+    if (!requesterDir.startsWith(`${rootDir}${sep}`)) {
+      return null;
+    }
+    return requesterDir;
   }
 
-  try {
-    const entries = await readdir(requesterDir, { withFileTypes: true });
-    return entries
-      .filter((entry) => entry.isFile() && entry.name.endsWith(".txt"))
-      .map((entry) => entry.name.slice(0, -4))
-      .sort();
-  } catch {
-    return [];
-  }
-}
-
-export type DeleteCookieResult =
-  | { status: "deleted"; domain: string }
-  | { status: "not_found"; domain: string }
-  | { status: "invalid" };
-
-/**
- * Deletes a Requester's Cookie Profile for a validated, normalized domain.
- */
-export async function deleteCookieProfile(
-  cookiesDir: string,
-  payload: Pick<WahaMessagePayload, "from" | "participant">,
-  rawDomain: string,
-): Promise<DeleteCookieResult> {
-  const target = resolveCookieFileTarget(cookiesDir, payload, rawDomain);
-  if (!target) {
-    return { status: "invalid" };
+  function resolveCookieFileTarget(
+    payload: RequesterPayload,
+    rawDomain: string,
+  ): { domain: string; requesterDir: string; filePath: string } | null {
+    const requesterDir = resolveRequesterDir(payload);
+    const domain = normalizeDomain(rawDomain);
+    if (!requesterDir || !domain) {
+      return null;
+    }
+    const filePath = resolve(requesterDir, `${domain}.txt`);
+    if (!filePath.startsWith(`${requesterDir}${sep}`)) {
+      return null;
+    }
+    return { domain, requesterDir, filePath };
   }
 
-  try {
-    await stat(target.filePath);
-    await rm(target.filePath);
-    return { status: "deleted", domain: target.domain };
-  } catch {
-    return { status: "not_found", domain: target.domain };
-  }
-}
+  return {
+    async save(payload, rawDomain, content) {
+      const target = resolveCookieFileTarget(payload, rawDomain);
+      if (!target) {
+        return null;
+      }
+      await mkdir(target.requesterDir, { recursive: true });
+      await writeFile(target.filePath, content, "utf8");
+      return target.domain;
+    },
 
-/**
- * Resolves the stored Cookie Profile path for a Requester and domain if it exists on disk.
- */
-export async function resolveCookieProfilePath(
-  cookiesDir: string,
-  payload: Pick<WahaMessagePayload, "from" | "participant">,
-  url: string,
-): Promise<string | null> {
-  const requester = normalizeRequester(payload);
-  const domain = normalizeDomain(url);
-  if (!requester || !domain) {
-    return null;
-  }
+    async list(payload) {
+      const requesterDir = resolveRequesterDir(payload);
+      if (!requesterDir) {
+        return [];
+      }
 
-  const rootDir = resolve(cookiesDir);
-  const candidate = resolve(rootDir, requester, `${domain}.txt`);
-  if (!candidate.startsWith(`${rootDir}${sep}`)) {
-    return null;
-  }
+      try {
+        const entries = await readdir(requesterDir, { withFileTypes: true });
+        return entries
+          .filter((entry) => entry.isFile() && entry.name.endsWith(".txt"))
+          .map((entry) => entry.name.slice(0, -4))
+          .sort();
+      } catch {
+        return [];
+      }
+    },
 
-  try {
-    const info = await stat(candidate);
-    return info.isFile() ? candidate : null;
-  } catch {
-    return null;
-  }
+    async delete(payload, rawDomain) {
+      const target = resolveCookieFileTarget(payload, rawDomain);
+      if (!target) {
+        return { status: "invalid" };
+      }
+
+      try {
+        await stat(target.filePath);
+        await rm(target.filePath);
+        return { status: "deleted", domain: target.domain };
+      } catch {
+        return { status: "not_found", domain: target.domain };
+      }
+    },
+
+    async resolvePathForUrl(payload, url) {
+      const domain = extractNormalizedDomain(url);
+      if (!domain) {
+        return null;
+      }
+      const target = resolveCookieFileTarget(payload, domain);
+      if (!target) {
+        return null;
+      }
+
+      try {
+        const info = await stat(target.filePath);
+        return info.isFile() ? target.filePath : null;
+      } catch {
+        return null;
+      }
+    },
+  };
 }
 
 /**
- * Copies a stored Cookie Profile to a unique per-job temporary file (ADR-0001).
+ * Copies a stored Cookie Profile to a unique temporary file (ADR-0001).
  */
 export async function createTempCookieCopy(
   profilePath: string,

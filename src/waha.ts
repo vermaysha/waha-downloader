@@ -41,35 +41,34 @@ export class WahaClient implements WahaClientPort {
     private readonly fetchFn: FetchLike = fetch,
   ) {}
 
-  private headers(): Record<string, string> {
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
+  private authHeaders(extra?: Record<string, string>): Record<string, string> {
+    const headers: Record<string, string> = { ...extra };
     if (this.config.apiKey) {
       headers["X-Api-Key"] = this.config.apiKey;
     }
     return headers;
   }
 
+  private async assertOk(response: Response, context: string): Promise<void> {
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(`${context} failed (${response.status}): ${body}`);
+    }
+  }
+
   private async request(path: string, init: RequestInit = {}): Promise<Response> {
-    const response = await this.fetchFn(`${this.config.baseUrl}${path}`, {
+    return this.fetchFn(`${this.config.baseUrl}${path}`, {
       ...init,
-      headers: {
-        ...this.headers(),
+      headers: this.authHeaders({
+        "Content-Type": "application/json",
         ...(init.headers as Record<string, string> | undefined),
-      },
+      }),
     });
-    return response;
   }
 
   private async requestOk(path: string, init: RequestInit = {}): Promise<void> {
     const response = await this.request(path, init);
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      throw new Error(
-        `WAHA ${init.method ?? "GET"} ${path} failed (${response.status}): ${body}`,
-      );
-    }
+    await this.assertOk(response, `WAHA ${init.method ?? "GET"} ${path}`);
   }
 
   async ensureSessionStarted(): Promise<void> {
@@ -84,12 +83,7 @@ export class WahaClient implements WahaClientPort {
       return;
     }
 
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      throw new Error(
-        `WAHA GET ${sessionPath} failed (${res.status}): ${body}`,
-      );
-    }
+    await this.assertOk(res, `WAHA GET ${sessionPath}`);
 
     const data = (await res.json()) as { status?: string };
     if (data.status === "STOPPED" || data.status === "FAILED") {
@@ -151,22 +145,11 @@ export class WahaClient implements WahaClientPort {
 
   async downloadMedia(mediaUrl: string): Promise<string> {
     const resolvedUrl = new URL(mediaUrl, this.config.baseUrl).toString();
-    const headers: Record<string, string> = {};
-    if (this.config.apiKey) {
-      headers["X-Api-Key"] = this.config.apiKey;
-    }
-
     const response = await this.fetchFn(resolvedUrl, {
       method: "GET",
-      headers,
+      headers: this.authHeaders(),
     });
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      throw new Error(
-        `WAHA media download failed (${response.status}): ${body}`,
-      );
-    }
-
+    await this.assertOk(response, "WAHA media download");
     return response.text();
   }
 }

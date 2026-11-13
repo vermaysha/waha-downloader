@@ -152,6 +152,19 @@ describe("createMessageHandler", () => {
       },
     });
 
+    // Ignored: non-message.any event (e.g. "message")
+    await handle({
+      event: "message",
+      session: "default",
+      payload: {
+        id: "m1b",
+        from: "6281234567890@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/ignored-event",
+        source: "app",
+      },
+    });
+
     // Ignored: bot's own API reply (even if it somehow echoed /dl)
     await handle({
       event: "message.any",
@@ -1192,5 +1205,123 @@ describe("createMessageHandler", () => {
     expect(textReplies[7]).toContain("Invalid domain");
     expect(textReplies[8]).toContain(".txt");
     expect(await readdir(cookiesDir)).toEqual([]);
+  });
+
+  test("/cookies <domain> with empty body string falls back to caption", async () => {
+    const rootTmp = await makeTempRoot();
+    const cookiesDir = await makeTempRoot();
+    const textReplies: string[] = [];
+    const netscapeCookies =
+      "# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t0\tSID\tcap123\n";
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia() {
+        return netscapeCookies;
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader: {
+        async download() {
+          throw new Error("unused");
+        },
+      },
+      archive: {
+        async upload() {
+          throw new Error("unused");
+        },
+      },
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+      cookiesDir,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-empty-body-caption",
+        from: "628111222@c.us",
+        fromMe: false,
+        body: "",
+        caption: "/cookies youtube.com",
+        hasMedia: true,
+        media: {
+          url: "http://waha:3000/api/files/cookies.txt",
+          mimetype: "text/plain",
+          filename: "cookies.txt",
+        },
+        source: "app",
+      },
+    });
+
+    const savedPath = join(cookiesDir, "628111222", "youtube.com.txt");
+    expect(await Bun.file(savedPath).text()).toBe(netscapeCookies);
+    expect(textReplies).toEqual([
+      "628111222@c.us|msg-empty-body-caption|Saved Cookie Profile for youtube.com.",
+    ]);
+  });
+
+  test("/cookies <domain> with hasMedia true but missing media.url replies with attachment URL unavailable error", async () => {
+    const rootTmp = await makeTempRoot();
+    const cookiesDir = await makeTempRoot();
+    const textReplies: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia() {
+        throw new Error("should not be called");
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader: {
+        async download() {
+          throw new Error("unused");
+        },
+      },
+      archive: {
+        async upload() {
+          throw new Error("unused");
+        },
+      },
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+      cookiesDir,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-missing-media-url",
+        from: "628111222@c.us",
+        fromMe: false,
+        body: "",
+        caption: "/cookies youtube.com",
+        hasMedia: true,
+        media: {
+          mimetype: "text/plain",
+          filename: "cookies.txt",
+        },
+        source: "app",
+      },
+    });
+
+    expect(textReplies).toHaveLength(1);
+    expect(textReplies[0]).toContain("628111222@c.us|msg-missing-media-url|");
+    expect(textReplies[0].toLowerCase()).toContain("attachment url");
+    expect(textReplies[0].toLowerCase()).toContain("unavailable");
   });
 });

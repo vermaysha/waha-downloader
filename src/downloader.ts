@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { DownloadedMedia, DownloaderPort, DownloadOptions } from "./types";
 
 /**
- * Builds the `yt-dlp` CLI argument list for a download job.
+ * Builds the `yt-dlp` CLI argument list for a Download Request.
  */
 export function buildYtDlpArgs(
   url: string,
@@ -29,7 +29,7 @@ export function buildYtDlpArgs(
 }
 
 /**
- * Downloads media using `yt-dlp` via `Bun.spawn` into a per-job directory.
+ * Downloads media using `yt-dlp` via `Bun.spawn` into a temporary output directory.
  */
 export class YtDlpDownloader implements DownloaderPort {
   constructor(private readonly timeoutMs = 5 * 60 * 1000) {}
