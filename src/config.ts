@@ -1,4 +1,6 @@
-export type UploadTarget = "s3" | "temp" | "both";
+import { readFileSync } from "node:fs";
+
+export type UploadTarget = "s3" | "temp" | "gdrive";
 
 export interface R2Config {
   endpoint: string;
@@ -9,14 +11,34 @@ export interface R2Config {
   presignTtlSeconds: number;
 }
 
+export type GoogleDriveAuthConfig =
+  | {
+      type: "oauth";
+      clientId: string;
+      clientSecret: string;
+      refreshToken: string;
+    }
+  | {
+      type: "service_account";
+      clientEmail: string;
+      privateKey: string;
+    };
+
+export interface GoogleDriveConfig {
+  auth: GoogleDriveAuthConfig;
+  folderId?: string;
+  makePublic: boolean;
+}
+
 export interface AppConfig {
   waha: {
     baseUrl: string;
     apiKey?: string;
     session: string;
   };
-  uploadTarget: UploadTarget;
+  uploadTargets: UploadTarget[];
   r2?: R2Config;
+  gdrive?: GoogleDriveConfig;
   tempUploadUrl: string;
   downloadConcurrency: number;
   maxWhatsappMediaBytes: number;
@@ -24,16 +46,122 @@ export interface AppConfig {
   cookiesDir: string;
 }
 
-function parseUploadTarget(value: string | undefined): UploadTarget {
+function parseUploadTargets(value: string | undefined): UploadTarget[] {
   const normalized = value?.trim().toLowerCase();
   if (!normalized) {
-    return "s3";
+    return ["s3"];
   }
-  if (normalized === "s3" || normalized === "temp" || normalized === "both") {
-    return normalized;
+  if (normalized === "both") {
+    return ["s3", "temp"];
   }
+  if (normalized === "all") {
+    return ["s3", "temp", "gdrive"];
+  }
+
+  const parts = normalized
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (parts.length === 0) {
+    return ["s3"];
+  }
+
+  const targets: UploadTarget[] = [];
+  for (const part of parts) {
+    if (part !== "s3" && part !== "temp" && part !== "gdrive") {
+      throw new Error(
+        `Invalid UPLOAD_TARGET: ${value}. Expected s3, temp, gdrive, both, all, or comma-separated targets`,
+      );
+    }
+    if (!targets.includes(part)) {
+      targets.push(part);
+    }
+  }
+  return targets;
+}
+
+function parseBooleanEnv(
+  value: string | undefined,
+  fallback: boolean,
+  key: string,
+): boolean {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) {
+    return fallback;
+  }
+  if (normalized === "true" || normalized === "1" || normalized === "yes") {
+    return true;
+  }
+  if (normalized === "false" || normalized === "0" || normalized === "no") {
+    return false;
+  }
+  throw new Error(`Invalid boolean for ${key}: ${value}`);
+}
+
+function loadGoogleDriveConfig(
+  env: Record<string, string | undefined>,
+): GoogleDriveConfig {
+  const folderId = env.GDRIVE_FOLDER_ID?.trim() || undefined;
+  const makePublic = parseBooleanEnv(env.GDRIVE_PUBLIC, true, "GDRIVE_PUBLIC");
+
+  const hasOAuth = Boolean(
+    env.GDRIVE_REFRESH_TOKEN?.trim() ||
+      env.GDRIVE_CLIENT_ID?.trim() ||
+      env.GDRIVE_CLIENT_SECRET?.trim(),
+  );
+  if (hasOAuth) {
+    return {
+      auth: {
+        type: "oauth",
+        clientId: requireEnv(env, "GDRIVE_CLIENT_ID"),
+        clientSecret: requireEnv(env, "GDRIVE_CLIENT_SECRET"),
+        refreshToken: requireEnv(env, "GDRIVE_REFRESH_TOKEN"),
+      },
+      folderId,
+      makePublic,
+    };
+  }
+
+  const saJson = env.GDRIVE_SERVICE_ACCOUNT_JSON?.trim();
+  if (saJson) {
+    const rawJson = saJson.startsWith("{")
+      ? saJson
+      : readFileSync(saJson, "utf8");
+    const parsed = JSON.parse(rawJson) as {
+      client_email?: string;
+      private_key?: string;
+    };
+    if (!parsed.client_email?.trim() || !parsed.private_key?.trim()) {
+      throw new Error(
+        "Invalid GDRIVE_SERVICE_ACCOUNT_JSON: missing client_email or private_key",
+      );
+    }
+    return {
+      auth: {
+        type: "service_account",
+        clientEmail: parsed.client_email.trim(),
+        privateKey: parsed.private_key.replace(/\\n/g, "\n"),
+      },
+      folderId,
+      makePublic,
+    };
+  }
+
+  if (env.GDRIVE_CLIENT_EMAIL?.trim() || env.GDRIVE_PRIVATE_KEY?.trim()) {
+    return {
+      auth: {
+        type: "service_account",
+        clientEmail: requireEnv(env, "GDRIVE_CLIENT_EMAIL"),
+        privateKey: requireEnv(env, "GDRIVE_PRIVATE_KEY").replace(/\\n/g, "\n"),
+      },
+      folderId,
+      makePublic,
+    };
+  }
+
   throw new Error(
-    `Invalid UPLOAD_TARGET: ${value}. Expected one of: s3, temp, both`,
+    "Missing Google Drive credentials: set GDRIVE_CLIENT_ID/GDRIVE_CLIENT_SECRET/GDRIVE_REFRESH_TOKEN or GDRIVE_CLIENT_EMAIL/GDRIVE_PRIVATE_KEY (or GDRIVE_SERVICE_ACCOUNT_JSON)",
   );
 }
 
@@ -73,28 +201,31 @@ export function loadConfig(
   const wahaBaseUrl = stripTrailingSlash(requireEnv(env, "WAHA_BASE_URL"));
   const wahaApiKey = env.WAHA_API_KEY?.trim() || undefined;
   const wahaSession = env.WAHA_SESSION?.trim() || "default";
-  const uploadTarget = parseUploadTarget(env.UPLOAD_TARGET);
+  const uploadTargets = parseUploadTargets(env.UPLOAD_TARGET);
   const tempUploadUrl = stripTrailingSlash(
     env.TEMP_UPLOAD_URL?.trim() || "https://temp.sh/upload",
   );
 
-  const r2: R2Config | undefined =
-    uploadTarget === "s3" || uploadTarget === "both"
-      ? {
-          endpoint: stripTrailingSlash(requireEnv(env, "R2_ENDPOINT")),
-          bucket: requireEnv(env, "R2_BUCKET"),
-          accessKeyId: requireEnv(env, "R2_ACCESS_KEY_ID"),
-          secretAccessKey: requireEnv(env, "R2_SECRET_ACCESS_KEY"),
-          publicBaseUrl: env.R2_PUBLIC_BASE_URL?.trim()
-            ? stripTrailingSlash(env.R2_PUBLIC_BASE_URL.trim())
-            : undefined,
-          presignTtlSeconds: parsePositiveInt(
-            env.R2_PRESIGN_TTL_SECONDS,
-            3600,
-            "R2_PRESIGN_TTL_SECONDS",
-          ),
-        }
-      : undefined;
+  const r2: R2Config | undefined = uploadTargets.includes("s3")
+    ? {
+        endpoint: stripTrailingSlash(requireEnv(env, "R2_ENDPOINT")),
+        bucket: requireEnv(env, "R2_BUCKET"),
+        accessKeyId: requireEnv(env, "R2_ACCESS_KEY_ID"),
+        secretAccessKey: requireEnv(env, "R2_SECRET_ACCESS_KEY"),
+        publicBaseUrl: env.R2_PUBLIC_BASE_URL?.trim()
+          ? stripTrailingSlash(env.R2_PUBLIC_BASE_URL.trim())
+          : undefined,
+        presignTtlSeconds: parsePositiveInt(
+          env.R2_PRESIGN_TTL_SECONDS,
+          3600,
+          "R2_PRESIGN_TTL_SECONDS",
+        ),
+      }
+    : undefined;
+
+  const gdrive: GoogleDriveConfig | undefined = uploadTargets.includes("gdrive")
+    ? loadGoogleDriveConfig(env)
+    : undefined;
 
   return {
     waha: {
@@ -102,8 +233,9 @@ export function loadConfig(
       apiKey: wahaApiKey,
       session: wahaSession,
     },
-    uploadTarget,
+    uploadTargets,
     r2,
+    gdrive,
     tempUploadUrl,
     downloadConcurrency: parsePositiveInt(
       env.DOWNLOAD_CONCURRENCY,

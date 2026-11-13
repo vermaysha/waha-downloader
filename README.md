@@ -49,8 +49,16 @@ See [.env.example](.env.example) for the full list:
 | `WAHA_BASE_URL` | Yes | — | Base URL of your WAHA server (e.g. `http://localhost:3000`) |
 | `WAHA_API_KEY` | No | — | WAHA API key (`X-Api-Key`) |
 | `WAHA_SESSION` | No | `default` | WAHA session name |
-| `UPLOAD_TARGET` | No | `s3` | Upload destination: `s3` (R2/S3 only), `temp` (temp.sh only), or `both` |
-| `TEMP_UPLOAD_URL` | No | `https://temp.sh/upload` | Temporary file upload endpoint used when `UPLOAD_TARGET` is `temp` or `both` |
+| `UPLOAD_TARGET` | No | `s3` | Upload destination: `s3`, `temp`, `gdrive`, `both` (`s3,temp`), `all` (`s3,temp,gdrive`), or comma-separated |
+| `TEMP_UPLOAD_URL` | No | `https://temp.sh/upload` | Temporary file upload endpoint used when `UPLOAD_TARGET` includes `temp` |
+| `GDRIVE_CLIENT_ID` | When `gdrive` (OAuth) | — | Google OAuth2 client ID |
+| `GDRIVE_CLIENT_SECRET` | When `gdrive` (OAuth) | — | Google OAuth2 client secret |
+| `GDRIVE_REFRESH_TOKEN` | When `gdrive` (OAuth) | — | Google OAuth2 refresh token |
+| `GDRIVE_SERVICE_ACCOUNT_JSON` | When `gdrive` (SA) | — | Service account JSON string or path to `.json` key file |
+| `GDRIVE_CLIENT_EMAIL` | When `gdrive` (SA) | — | Service account `client_email` (alternative to JSON) |
+| `GDRIVE_PRIVATE_KEY` | When `gdrive` (SA) | — | Service account `private_key` (alternative to JSON) |
+| `GDRIVE_FOLDER_ID` | No | — | Optional Google Drive parent folder ID |
+| `GDRIVE_PUBLIC` | No | `true` | Share uploaded Drive files as `anyone` reader (`true`/`false`) |
 | `R2_ENDPOINT` | When `s3`/`both` | — | Cloudflare R2 S3-compatible endpoint |
 | `R2_BUCKET` | When `s3`/`both` | — | Target R2 bucket name |
 | `R2_ACCESS_KEY_ID` | When `s3`/`both` | — | R2 access key ID |

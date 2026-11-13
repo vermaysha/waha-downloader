@@ -1,9 +1,11 @@
+import { generateKeyPairSync } from "node:crypto";
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   CompositeArchive,
+  GoogleDriveArchive,
   R2Archive,
   TempShArchive,
   createArchive,
@@ -129,5 +131,165 @@ describe("archive adapters", () => {
     expect(
       createArchive(loadConfig({ ...baseEnv, UPLOAD_TARGET: "both" })),
     ).toBeInstanceOf(CompositeArchive);
+    expect(
+      createArchive(
+        loadConfig({
+          WAHA_BASE_URL: "http://localhost:3000",
+          UPLOAD_TARGET: "gdrive",
+          GDRIVE_CLIENT_ID: "cid",
+          GDRIVE_CLIENT_SECRET: "csecret",
+          GDRIVE_REFRESH_TOKEN: "rtoken",
+        }),
+      ),
+    ).toBeInstanceOf(GoogleDriveArchive);
+    expect(
+      createArchive(
+        loadConfig({
+          ...baseEnv,
+          UPLOAD_TARGET: "all",
+          GDRIVE_CLIENT_ID: "cid",
+          GDRIVE_CLIENT_SECRET: "csecret",
+          GDRIVE_REFRESH_TOKEN: "rtoken",
+        }),
+      ),
+    ).toBeInstanceOf(CompositeArchive);
+  });
+
+  test("GoogleDriveArchive exchanges OAuth refresh token, uploads via resumable session, and sets public permission", async () => {
+    const filePath = await makeTempFile("clip.mp4", "drive-video-bytes");
+    const requests: Array<{ url: string; method: string; body?: string }> = [];
+
+    const gdrive = new GoogleDriveArchive(
+      {
+        auth: {
+          type: "oauth",
+          clientId: "cid",
+          clientSecret: "csecret",
+          refreshToken: "rtoken",
+        },
+        folderId: "folder-abc",
+        makePublic: true,
+      },
+      {
+        fetchFn: async (input, init) => {
+          const url = String(input);
+          const method = init?.method ?? "GET";
+          const body =
+            typeof init?.body === "string" ? init.body : undefined;
+          requests.push({ url, method, body });
+
+          if (url === "https://oauth2.googleapis.com/token") {
+            return new Response(
+              JSON.stringify({ access_token: "ya29.test", expires_in: 3600 }),
+              { status: 200 },
+            );
+          }
+          if (url.startsWith("https://www.googleapis.com/upload/drive/v3/files")) {
+            return new Response(null, {
+              status: 200,
+              headers: { location: "https://upload.example.com/session/1" },
+            });
+          }
+          if (url === "https://upload.example.com/session/1") {
+            return new Response(
+              JSON.stringify({
+                id: "file-123",
+                name: "clip.mp4",
+                webViewLink: "https://drive.google.com/file/d/file-123/view",
+              }),
+              { status: 200 },
+            );
+          }
+          if (
+            url ===
+            "https://www.googleapis.com/drive/v3/files/file-123/permissions?supportsAllDrives=true"
+          ) {
+            return new Response(JSON.stringify({ id: "anyoneWithLink" }), {
+              status: 200,
+            });
+          }
+          return new Response("unexpected", { status: 500 });
+        },
+      },
+    );
+
+    const url = await gdrive.upload(filePath, "downloads/ignored.mp4");
+    expect(url).toBe("https://drive.google.com/file/d/file-123/view");
+    expect(requests.map((r) => `${r.method} ${r.url}`)).toEqual([
+      "POST https://oauth2.googleapis.com/token",
+      "POST https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable&supportsAllDrives=true&fields=id,name,webViewLink,webContentLink",
+      "PUT https://upload.example.com/session/1",
+      "POST https://www.googleapis.com/drive/v3/files/file-123/permissions?supportsAllDrives=true",
+    ]);
+    expect(JSON.parse(requests[1]!.body!)).toEqual({
+      name: "clip.mp4",
+      parents: ["folder-abc"],
+    });
+    expect(JSON.parse(requests[3]!.body!)).toEqual({
+      role: "reader",
+      type: "anyone",
+    });
+  });
+
+  test("GoogleDriveArchive supports Service Account JWT auth and private uploads (makePublic: false)", async () => {
+    const filePath = await makeTempFile("sa.mp4", "sa-bytes");
+    const { privateKey } = generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+      privateKeyEncoding: { type: "pkcs8", format: "pem" },
+      publicKeyEncoding: { type: "spki", format: "pem" },
+    });
+
+    let tokenRequestBody = "";
+    let permissionCalled = false;
+
+    const gdrive = new GoogleDriveArchive(
+      {
+        auth: {
+          type: "service_account",
+          clientEmail: "bot@proj.iam.gserviceaccount.com",
+          privateKey,
+        },
+        makePublic: false,
+      },
+      {
+        fetchFn: async (input, init) => {
+          const url = String(input);
+          if (url === "https://oauth2.googleapis.com/token") {
+            tokenRequestBody = String(init?.body ?? "");
+            return new Response(
+              JSON.stringify({ access_token: "sa-token", expires_in: 3600 }),
+              { status: 200 },
+            );
+          }
+          if (url.startsWith("https://www.googleapis.com/upload/drive/v3/files")) {
+            return new Response(null, {
+              status: 200,
+              headers: { location: "https://upload.example.com/sa/1" },
+            });
+          }
+          if (url === "https://upload.example.com/sa/1") {
+            return new Response(
+              JSON.stringify({
+                id: "sa-file-99",
+                webContentLink: "https://drive.google.com/uc?id=sa-file-99",
+              }),
+              { status: 200 },
+            );
+          }
+          if (url.includes("/permissions")) {
+            permissionCalled = true;
+          }
+          return new Response("unexpected", { status: 500 });
+        },
+      },
+    );
+
+    const url = await gdrive.upload(filePath, "downloads/ignored.mp4");
+    expect(url).toBe("https://drive.google.com/uc?id=sa-file-99");
+    expect(tokenRequestBody).toContain(
+      "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer",
+    );
+    expect(tokenRequestBody).toContain("assertion=");
+    expect(permissionCalled).toBe(false);
   });
 });
