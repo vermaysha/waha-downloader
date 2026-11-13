@@ -15,6 +15,7 @@ export interface AppConfig {
   downloadConcurrency: number;
   maxWhatsappMediaBytes: number;
   tmpDir: string;
+  cookiesDir: string;
 }
 
 function requireEnv(env: Record<string, string | undefined>, key: string): string {
@@ -91,5 +92,6 @@ export function loadConfig(
       "MAX_WHATSAPP_MEDIA_BYTES",
     ),
     tmpDir: env.TMP_DIR?.trim() || "tmp",
+    cookiesDir: env.COOKIES_DIR?.trim() || "./cookies",
   };
 }

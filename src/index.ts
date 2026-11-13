@@ -19,6 +19,7 @@ async function main(): Promise<void> {
     archive,
     maxWhatsappMediaBytes: config.maxWhatsappMediaBytes,
     tmpDir: config.tmpDir,
+    cookiesDir: config.cookiesDir,
   });
 
   const listener = connectWahaWebSocket({

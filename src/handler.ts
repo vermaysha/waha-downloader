@@ -1,5 +1,6 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { createTempCookieCopy, resolveCookieProfilePath } from "./cookies";
 import type {
   DownloaderPort,
   MediaArchivePort,
@@ -13,6 +14,7 @@ export interface MessageHandlerDeps {
   archive: MediaArchivePort;
   maxWhatsappMediaBytes: number;
   tmpDir: string;
+  cookiesDir?: string;
 }
 
 function extractCommandText(event: WahaMessageEvent): string {
@@ -68,9 +70,25 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
 
     await mkdir(deps.tmpDir, { recursive: true });
     const workDir = await mkdtemp(join(deps.tmpDir, "dl-"));
+    let tempCookiePath: string | undefined;
 
     try {
-      const downloaded = await deps.downloader.download(url, workDir);
+      if (deps.cookiesDir) {
+        const profilePath = await resolveCookieProfilePath(
+          deps.cookiesDir,
+          payload,
+          url,
+        );
+        if (profilePath) {
+          tempCookiePath = await createTempCookieCopy(profilePath, deps.tmpDir);
+        }
+      }
+
+      const downloaded = await deps.downloader.download(
+        url,
+        workDir,
+        tempCookiePath ? { cookiesFile: tempCookiePath } : undefined,
+      );
       const objectKey = buildObjectKey(downloaded.filename);
       const archiveUrl = await deps.archive.upload(
         downloaded.filePath,
@@ -101,7 +119,12 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
         replyTo: payload.id,
       });
     } finally {
-      await rm(workDir, { recursive: true, force: true });
+      await Promise.all([
+        rm(workDir, { recursive: true, force: true }),
+        tempCookiePath
+          ? rm(tempCookiePath, { force: true })
+          : Promise.resolve(),
+      ]);
     }
   };
 }
