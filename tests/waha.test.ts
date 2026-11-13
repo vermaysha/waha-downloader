@@ -76,4 +76,41 @@ describe("WAHA client and WebSocket helpers", () => {
       },
     ]);
   });
+
+  test("downloadMedia fetches media URL with X-Api-Key when configured and throws on error status", async () => {
+    const requests: Array<{ url: string; method: string; apiKey?: string }> = [];
+
+    const client = new WahaClient(
+      { baseUrl: "http://waha:3000", session: "bot", apiKey: "secret-key" },
+      async (input, init) => {
+        const headers = new Headers(init?.headers);
+        requests.push({
+          url: typeof input === "string" ? input : input.toString(),
+          method: init?.method ?? "GET",
+          apiKey: headers.get("X-Api-Key") ?? undefined,
+        });
+        return new Response("# Netscape HTTP Cookie File\n", { status: 200 });
+      },
+    );
+
+    const content = await client.downloadMedia(
+      "http://waha:3000/api/files/cookies.txt",
+    );
+    expect(content).toBe("# Netscape HTTP Cookie File\n");
+    expect(requests).toEqual([
+      {
+        url: "http://waha:3000/api/files/cookies.txt",
+        method: "GET",
+        apiKey: "secret-key",
+      },
+    ]);
+
+    const failingClient = new WahaClient(
+      { baseUrl: "http://waha:3000", session: "bot" },
+      async () => new Response("Forbidden", { status: 403 }),
+    );
+    await expect(
+      failingClient.downloadMedia("http://waha:3000/api/files/cookies.txt"),
+    ).rejects.toThrow("403");
+  });
 });

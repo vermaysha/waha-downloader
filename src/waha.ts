@@ -148,6 +148,27 @@ export class WahaClient implements WahaClientPort {
       }),
     });
   }
+
+  async downloadMedia(mediaUrl: string): Promise<string> {
+    const resolvedUrl = new URL(mediaUrl, this.config.baseUrl).toString();
+    const headers: Record<string, string> = {};
+    if (this.config.apiKey) {
+      headers["X-Api-Key"] = this.config.apiKey;
+    }
+
+    const response = await this.fetchFn(resolvedUrl, {
+      method: "GET",
+      headers,
+    });
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(
+        `WAHA media download failed (${response.status}): ${body}`,
+      );
+    }
+
+    return response.text();
+  }
 }
 
 export interface WebSocketListenerOptions {
