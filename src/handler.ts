@@ -54,6 +54,16 @@ function buildObjectKey(filename: string): string {
   return `downloads/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
 }
 
+const HELP_TEXT = [
+  "WAHA Downloader Commands:",
+  "",
+  "• /dl <url1> [url2 ...] — Download video (supports multiple space/newline-separated URLs)",
+  "• /cookies <domain> — Save Netscape cookies (attach a .txt file or paste cookie lines below)",
+  "• /cookies list — List your saved cookie domains",
+  "• /cookies del <domain> — Delete saved cookies for a domain",
+  "• /help or /h — Show this help message",
+].join("\n");
+
 /**
  * Creates the primary application seam for handling WAHA `message.any` events.
  */
@@ -75,6 +85,18 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
 
     const text = extractCommandText(event);
     const chatId = payload.fromMe ? payload.to || payload.from : payload.from;
+
+    if (/^\/(?:help|h)(?:\s|$)/.test(text)) {
+      deps.logger?.info(
+        `[WAHA] Received /help command from ${chatId} (msg=${payload.id})`,
+      );
+      await deps.waha.sendText({
+        chatId,
+        text: HELP_TEXT,
+        replyTo: payload.id,
+      });
+      return;
+    }
 
     if (/^\/cookies(?:\s|$)/.test(text)) {
       deps.logger?.info(

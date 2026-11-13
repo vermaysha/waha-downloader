@@ -1324,4 +1324,70 @@ describe("createMessageHandler", () => {
     expect(textReplies[0].toLowerCase()).toContain("attachment url");
     expect(textReplies[0].toLowerCase()).toContain("unavailable");
   });
+
+  test("/help and /h reply with usage instructions for all supported commands", async () => {
+    const rootTmp = await makeTempRoot();
+    const textReplies: Array<{ chatId: string; replyTo: string; text: string }> = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(params);
+      },
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader: {
+        async download() {
+          throw new Error("unused");
+        },
+      },
+      archive: {
+        async upload() {
+          throw new Error("unused");
+        },
+      },
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-help",
+        from: "628123@c.us",
+        fromMe: false,
+        body: "/help",
+        source: "app",
+      },
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-h",
+        from: "628123@c.us",
+        fromMe: false,
+        body: "/h",
+        source: "app",
+      },
+    });
+
+    expect(textReplies).toHaveLength(2);
+    for (const reply of textReplies) {
+      expect(reply.chatId).toBe("628123@c.us");
+      expect(reply.text).toContain("/dl");
+      expect(reply.text).toContain("/cookies");
+      expect(reply.text).toContain("/help");
+    }
+    expect(textReplies[0]?.replyTo).toBe("msg-help");
+    expect(textReplies[1]?.replyTo).toBe("msg-h");
+  });
 });
