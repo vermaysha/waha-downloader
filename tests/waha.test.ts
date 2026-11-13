@@ -113,4 +113,36 @@ describe("WAHA client and WebSocket helpers", () => {
       failingClient.downloadMedia("http://waha:3000/api/files/cookies.txt"),
     ).rejects.toThrow("403");
   });
+
+  test("sendSeen posts session, chatId, and optional messageId/participant to /api/sendSeen", async () => {
+    const calls: Array<{ url: string; method: string; body: unknown }> = [];
+    const client = new WahaClient(
+      { baseUrl: "http://waha:3000", session: "bot", apiKey: "secret-key" },
+      async (input, init) => {
+        calls.push({
+          url: String(input),
+          method: init?.method ?? "GET",
+          body: init?.body ? JSON.parse(String(init.body)) : undefined,
+        });
+        return new Response(null, { status: 201 });
+      },
+    );
+
+    await client.sendSeen({
+      chatId: "628123@c.us",
+      messageId: "msg-1",
+    });
+
+    expect(calls).toEqual([
+      {
+        url: "http://waha:3000/api/sendSeen",
+        method: "POST",
+        body: {
+          session: "bot",
+          chatId: "628123@c.us",
+          messageId: "msg-1",
+        },
+      },
+    ]);
+  });
 });

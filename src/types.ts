@@ -26,6 +26,11 @@ export interface WahaMessageEvent {
 }
 
 export interface WahaClientPort {
+  sendSeen?(params: {
+    chatId: string;
+    messageId?: string;
+    participant?: string;
+  }): Promise<void>;
   sendReaction(messageId: string, emoji: string): Promise<void>;
   sendVideo(params: {
     chatId: string;

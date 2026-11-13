@@ -86,10 +86,26 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
     const text = extractCommandText(event);
     const chatId = payload.fromMe ? payload.to || payload.from : payload.from;
 
+    const markSeenBestEffort = async () => {
+      if (payload.fromMe || !deps.waha.sendSeen) {
+        return;
+      }
+      try {
+        await deps.waha.sendSeen({
+          chatId,
+          messageId: payload.id,
+          participant: payload.participant ?? undefined,
+        });
+      } catch {
+        // Best-effort read receipt; proceed even if sendSeen fails.
+      }
+    };
+
     if (/^\/(?:help|h)(?:\s|$)/.test(text)) {
       deps.logger?.info(
         `[WAHA] Received /help command from ${chatId} (msg=${payload.id})`,
       );
+      await markSeenBestEffort();
       await deps.waha.sendText({
         chatId,
         text: HELP_TEXT,
@@ -102,6 +118,7 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
       deps.logger?.info(
         `[WAHA] Received /cookies command from ${chatId} (msg=${payload.id})`,
       );
+      await markSeenBestEffort();
       await handleCookiesCommand(
         { waha: deps.waha, cookieStore },
         payload,
@@ -119,6 +136,8 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
     deps.logger?.info(
       `[WAHA] Received /dl command from ${chatId} (${urls.length} url(s), msg=${payload.id})`,
     );
+
+    await markSeenBestEffort();
 
     try {
       await deps.waha.sendReaction(payload.id, "⏳");

@@ -91,6 +91,22 @@ export class WahaClient implements WahaClientPort {
     }
   }
 
+  async sendSeen(params: {
+    chatId: string;
+    messageId?: string;
+    participant?: string;
+  }): Promise<void> {
+    await this.requestOk("/api/sendSeen", {
+      method: "POST",
+      body: JSON.stringify({
+        session: this.config.session,
+        chatId: params.chatId,
+        ...(params.messageId ? { messageId: params.messageId } : {}),
+        ...(params.participant ? { participant: params.participant } : {}),
+      }),
+    });
+  }
+
   async sendReaction(messageId: string, emoji: string): Promise<void> {
     await this.requestOk("/api/reaction", {
       method: "PUT",

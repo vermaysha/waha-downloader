@@ -1390,4 +1390,78 @@ describe("createMessageHandler", () => {
     expect(textReplies[0]?.replyTo).toBe("msg-help");
     expect(textReplies[1]?.replyTo).toBe("msg-h");
   });
+
+  test("sends best-effort seen receipt on incoming commands and skips sendSeen for fromMe messages", async () => {
+    const rootTmp = await makeTempRoot();
+    const seenCalls: Array<{ chatId: string; messageId?: string; participant?: string }> = [];
+    const textReplies: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendSeen(params) {
+        seenCalls.push(params);
+        if (params.messageId === "msg-seen-fail") {
+          throw new Error("seen failed");
+        }
+      },
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader: {
+        async download() {
+          throw new Error("unused");
+        },
+      },
+      archive: {
+        async upload() {
+          throw new Error("unused");
+        },
+      },
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-seen-fail",
+        from: "120363000@g.us",
+        participant: "628111@c.us",
+        fromMe: false,
+        body: "/help",
+        source: "app",
+      },
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-self",
+        from: "628111@c.us",
+        to: "628111@c.us",
+        fromMe: true,
+        body: "/h",
+        source: "app",
+      },
+    });
+
+    expect(seenCalls).toEqual([
+      {
+        chatId: "120363000@g.us",
+        messageId: "msg-seen-fail",
+        participant: "628111@c.us",
+      },
+    ]);
+    expect(textReplies).toHaveLength(2);
+  });
 });
