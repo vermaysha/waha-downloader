@@ -10,7 +10,9 @@ export function buildYtDlpArgs(
   outputDir: string,
   options?: DownloadOptions,
 ): string[] {
-  const outputTemplate = join(outputDir, "%(title).80s-%(id)s.%(ext)s");
+  // Use byte-length truncation (.B) so multi-byte UTF-8 titles (e.g. CJK/emoji)
+  // plus yt-dlp's .part / format suffixes never exceed the 255-byte NAME_MAX limit.
+  const outputTemplate = join(outputDir, "%(title).80B-%(id).40B.%(ext)s");
   const args = [
     "yt-dlp",
     "--no-playlist",
