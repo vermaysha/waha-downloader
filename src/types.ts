@@ -1,3 +1,9 @@
+export interface WahaMessageMedia {
+  url?: string | null;
+  mimetype?: string | null;
+  filename?: string | null;
+}
+
 export interface WahaMessagePayload {
   id: string;
   from: string;
@@ -7,6 +13,8 @@ export interface WahaMessagePayload {
   caption?: string | null;
   participant?: string | null;
   source?: string | null;
+  hasMedia?: boolean;
+  media?: WahaMessageMedia | null;
 }
 
 export interface WahaMessageEvent {
@@ -31,6 +39,7 @@ export interface WahaClientPort {
     text: string;
     replyTo: string;
   }): Promise<void>;
+  downloadMedia(mediaUrl: string): Promise<string>;
 }
 
 export interface DownloadedMedia {

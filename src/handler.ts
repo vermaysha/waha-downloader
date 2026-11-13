@@ -1,6 +1,13 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { createTempCookieCopy, resolveCookieProfilePath } from "./cookies";
+import {
+  createTempCookieCopy,
+  deleteCookieProfile,
+  listCookieProfiles,
+  normalizeCookieDomain,
+  resolveCookieProfilePath,
+  saveCookieProfile,
+} from "./cookies";
 import type {
   DownloaderPort,
   MediaArchivePort,
@@ -73,6 +80,142 @@ function buildObjectKey(filename: string): string {
   return `downloads/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
 }
 
+async function handleCookiesCommand(
+  deps: MessageHandlerDeps,
+  payload: WahaMessageEvent["payload"],
+  chatId: string,
+  text: string,
+): Promise<void> {
+  if (!deps.cookiesDir) {
+    await deps.waha.sendText({
+      chatId,
+      text: "Cookie storage is not configured.",
+      replyTo: payload.id,
+    });
+    return;
+  }
+
+  const [firstLine, ...restLines] = text.split(/\r?\n/);
+  const args = (firstLine ?? "").trim().split(/\s+/).slice(1);
+  const subcommand = args[0] ?? "";
+
+  if (subcommand === "list" && args.length === 1) {
+    const domains = await listCookieProfiles(deps.cookiesDir, payload);
+    const replyText =
+      domains.length > 0
+        ? `Stored Cookie Profiles:\n${domains.map((d) => `- ${d}`).join("\n")}`
+        : "No Cookie Profiles stored.";
+    await deps.waha.sendText({
+      chatId,
+      text: replyText,
+      replyTo: payload.id,
+    });
+    return;
+  }
+
+  if (subcommand === "del") {
+    const targetDomain = args[1] ?? "";
+    const result = await deleteCookieProfile(
+      deps.cookiesDir,
+      payload,
+      targetDomain,
+    );
+    const replyText =
+      result.status === "deleted"
+        ? `Deleted Cookie Profile for ${result.domain}.`
+        : result.status === "not_found"
+          ? `No Cookie Profile found for ${result.domain}.`
+          : `Invalid domain "${targetDomain}".`;
+    await deps.waha.sendText({
+      chatId,
+      text: replyText,
+      replyTo: payload.id,
+    });
+    return;
+  }
+
+  const rawDomain = subcommand;
+  if (!rawDomain) {
+    await deps.waha.sendText({
+      chatId,
+      text: "Usage: /cookies <domain>, /cookies list, or /cookies del <domain>.",
+      replyTo: payload.id,
+    });
+    return;
+  }
+
+  const normalizedDomain = normalizeCookieDomain(rawDomain);
+  if (!normalizedDomain) {
+    await deps.waha.sendText({
+      chatId,
+      text: `Invalid domain "${rawDomain}".`,
+      replyTo: payload.id,
+    });
+    return;
+  }
+
+  let cookieContent: string | null = null;
+  if (payload.media?.url) {
+    const filename = payload.media.filename;
+    if (filename && !filename.toLowerCase().endsWith(".txt")) {
+      await deps.waha.sendText({
+        chatId,
+        text: "Cookie attachment must be a .txt Netscape cookie file.",
+        replyTo: payload.id,
+      });
+      return;
+    }
+
+    try {
+      cookieContent = await deps.waha.downloadMedia(payload.media.url);
+    } catch (error) {
+      const reason =
+        error instanceof Error ? error.message : "Unknown error occurred";
+      await deps.waha.sendText({
+        chatId,
+        text: `Failed to download cookie attachment: ${reason}`,
+        replyTo: payload.id,
+      });
+      return;
+    }
+  } else {
+    const inlineContent = restLines.join("\n").trim();
+    if (inlineContent) {
+      cookieContent = `${inlineContent}\n`;
+    }
+  }
+
+  if (!cookieContent) {
+    await deps.waha.sendText({
+      chatId,
+      text: `Please attach a .txt Netscape cookie file or include cookie lines after "/cookies ${normalizedDomain}".`,
+      replyTo: payload.id,
+    });
+    return;
+  }
+
+  const savedDomain = await saveCookieProfile(
+    deps.cookiesDir,
+    payload,
+    normalizedDomain,
+    cookieContent,
+  );
+  if (!savedDomain) {
+    await deps.waha.sendText({
+      chatId,
+      text: `Invalid domain "${rawDomain}".`,
+      replyTo: payload.id,
+    });
+    return;
+  }
+
+  await deps.waha.sendText({
+    chatId,
+    text: `Saved Cookie Profile for ${savedDomain}.`,
+    replyTo: payload.id,
+  });
+}
+
 /**
  * Creates the primary application seam for handling WAHA `message.any` events.
  */
@@ -90,12 +233,17 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
     }
 
     const text = extractCommandText(event);
+    const chatId = payload.fromMe ? payload.to || payload.from : payload.from;
+
+    if (/^\/cookies(?:\s|$)/.test(text)) {
+      await handleCookiesCommand(deps, payload, chatId, text);
+      return;
+    }
+
     const urls = parseDlUrls(text);
     if (urls.length === 0) {
       return;
     }
-
-    const chatId = payload.fromMe ? payload.to || payload.from : payload.from;
 
     try {
       await deps.waha.sendReaction(payload.id, "⏳");

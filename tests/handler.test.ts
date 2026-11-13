@@ -42,6 +42,9 @@ describe("createMessageHandler", () => {
       async sendText(params) {
         calls.push(`sendText:${params.chatId}:${params.replyTo}:${params.text}`);
       },
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -107,6 +110,9 @@ describe("createMessageHandler", () => {
       },
       async sendText(params) {
         calls.push(`sendText:${params.chatId}:${params.replyTo}:${params.text}`);
+      },
+      async downloadMedia() {
+        return "";
       },
     };
 
@@ -207,6 +213,9 @@ describe("createMessageHandler", () => {
       async sendText(params) {
         calls.push(`sendText:${params.chatId}:${params.replyTo}:${params.text}`);
       },
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -260,6 +269,9 @@ describe("createMessageHandler", () => {
       async sendVideo() {},
       async sendText(params) {
         textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia() {
+        return "";
       },
     };
 
@@ -318,6 +330,9 @@ describe("createMessageHandler", () => {
       async sendReaction() {},
       async sendVideo() {},
       async sendText() {},
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -390,6 +405,9 @@ describe("createMessageHandler", () => {
       async sendReaction() {},
       async sendVideo() {},
       async sendText() {},
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -451,6 +469,9 @@ describe("createMessageHandler", () => {
       async sendReaction() {},
       async sendVideo() {},
       async sendText() {},
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -506,6 +527,9 @@ describe("createMessageHandler", () => {
       async sendReaction() {},
       async sendVideo() {},
       async sendText() {},
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -562,6 +586,9 @@ describe("createMessageHandler", () => {
         sentVideos.push(`${params.chatId}|${params.replyTo}|${params.videoUrl}`);
       },
       async sendText() {},
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -629,6 +656,9 @@ describe("createMessageHandler", () => {
         completedUrls.push(params.videoUrl);
       },
       async sendText() {},
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -715,6 +745,9 @@ describe("createMessageHandler", () => {
       async sendText(params) {
         textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
       },
+      async downloadMedia() {
+        return "";
+      },
     };
 
     const downloader: DownloaderPort = {
@@ -766,5 +799,398 @@ describe("createMessageHandler", () => {
       "628777@c.us|msg-partial|Download failed (https://example.com/bad): video unavailable",
     ]);
     expect(await readdir(rootTmp)).toEqual([]);
+  });
+
+  test("/cookies <domain> with .txt attachment downloads media from WAHA, saves normalized Cookie Profile, and replies", async () => {
+    const rootTmp = await makeTempRoot();
+    const cookiesDir = await makeTempRoot();
+    const downloadedMediaUrls: string[] = [];
+    const textReplies: string[] = [];
+    let observedCookiesContent: string | undefined;
+
+    const netscapeCookies =
+      "# Netscape HTTP Cookie File\n.youtube.com\tTRUE\t/\tTRUE\t0\tSID\tsecret123\n";
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia(mediaUrl) {
+        downloadedMediaUrls.push(mediaUrl);
+        return netscapeCookies;
+      },
+    };
+
+    const downloader: DownloaderPort = {
+      async download(_url, outputDir, options) {
+        if (options?.cookiesFile) {
+          observedCookiesContent = await Bun.file(options.cookiesFile).text();
+        }
+        const filePath = join(outputDir, "vid.mp4");
+        await Bun.write(filePath, new Uint8Array(64));
+        return { filePath, fileSize: 64, filename: "vid.mp4" };
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload() {
+        return "https://cdn.example.com/vid.mp4";
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+      cookiesDir,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-cookie-attach",
+        from: "628111222@c.us",
+        fromMe: false,
+        caption: "/cookies www.YouTube.com",
+        hasMedia: true,
+        media: {
+          url: "http://waha:3000/api/files/cookies.txt",
+          mimetype: "text/plain",
+          filename: "cookies.txt",
+        },
+        source: "app",
+      },
+    });
+
+    expect(downloadedMediaUrls).toEqual([
+      "http://waha:3000/api/files/cookies.txt",
+    ]);
+    const savedPath = join(cookiesDir, "628111222", "youtube.com.txt");
+    expect(await Bun.file(savedPath).text()).toBe(netscapeCookies);
+    expect(textReplies).toEqual([
+      "628111222@c.us|msg-cookie-attach|Saved Cookie Profile for youtube.com.",
+    ]);
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-dl-after-cookie",
+        from: "628111222@c.us",
+        fromMe: false,
+        body: "/dl https://youtube.com/watch?v=1",
+        source: "app",
+      },
+    });
+    expect(observedCookiesContent).toBe(netscapeCookies);
+  });
+
+  test("/cookies <domain> with inline Netscape cookie text saves normalized Cookie Profile on disk", async () => {
+    const rootTmp = await makeTempRoot();
+    const cookiesDir = await makeTempRoot();
+    const textReplies: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia() {
+        throw new Error("should not download media for inline cookies");
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader: {
+        async download() {
+          throw new Error("unused");
+        },
+      },
+      archive: {
+        async upload() {
+          throw new Error("unused");
+        },
+      },
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+      cookiesDir,
+    });
+
+    const inlineCookieLines =
+      "# Netscape HTTP Cookie File\n.x.com\tTRUE\t/\tTRUE\t0\tauth_token\tabc";
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-cookie-inline",
+        from: "628333444@c.us",
+        fromMe: false,
+        body: `/cookies WWW.X.COM\n${inlineCookieLines}`,
+        source: "app",
+      },
+    });
+
+    const savedPath = join(cookiesDir, "628333444", "x.com.txt");
+    expect(await Bun.file(savedPath).text()).toBe(`${inlineCookieLines}\n`);
+    expect(textReplies).toEqual([
+      "628333444@c.us|msg-cookie-inline|Saved Cookie Profile for x.com.",
+    ]);
+  });
+
+  test("/cookies list replies with stored Cookie Profile domains or clear message when none exist", async () => {
+    const rootTmp = await makeTempRoot();
+    const cookiesDir = await makeTempRoot();
+    const textReplies: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader: {
+        async download() {
+          throw new Error("unused");
+        },
+      },
+      archive: {
+        async upload() {
+          throw new Error("unused");
+        },
+      },
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+      cookiesDir,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-list-empty",
+        from: "628555666@c.us",
+        fromMe: false,
+        body: "/cookies list",
+        source: "app",
+      },
+    });
+
+    expect(textReplies[0]).toBe(
+      "628555666@c.us|msg-list-empty|No Cookie Profiles stored.",
+    );
+
+    const requesterDir = join(cookiesDir, "628555666");
+    await mkdir(requesterDir, { recursive: true });
+    await Bun.write(join(requesterDir, "youtube.com.txt"), "cookie1");
+    await Bun.write(join(requesterDir, "instagram.com.txt"), "cookie2");
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-list-full",
+        from: "628555666@c.us",
+        fromMe: false,
+        body: "/cookies list",
+        source: "app",
+      },
+    });
+
+    expect(textReplies[1]).toContain("instagram.com");
+    expect(textReplies[1]).toContain("youtube.com");
+  });
+
+  test("/cookies del <domain> deletes stored Cookie Profile on disk and confirms removal", async () => {
+    const rootTmp = await makeTempRoot();
+    const cookiesDir = await makeTempRoot();
+    const textReplies: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(`${params.chatId}|${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader: {
+        async download() {
+          throw new Error("unused");
+        },
+      },
+      archive: {
+        async upload() {
+          throw new Error("unused");
+        },
+      },
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+      cookiesDir,
+    });
+
+    const requesterDir = join(cookiesDir, "628999000");
+    await mkdir(requesterDir, { recursive: true });
+    const profilePath = join(requesterDir, "youtube.com.txt");
+    await Bun.write(profilePath, "cookie-data");
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-del-1",
+        from: "628999000@c.us",
+        fromMe: false,
+        body: "/cookies del www.YouTube.com",
+        source: "app",
+      },
+    });
+
+    expect(await Bun.file(profilePath).exists()).toBe(false);
+    expect(textReplies[0]).toBe(
+      "628999000@c.us|msg-del-1|Deleted Cookie Profile for youtube.com.",
+    );
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-del-2",
+        from: "628999000@c.us",
+        fromMe: false,
+        body: "/cookies del nonexistent.com",
+        source: "app",
+      },
+    });
+
+    expect(textReplies[1]).toBe(
+      "628999000@c.us|msg-del-2|No Cookie Profile found for nonexistent.com.",
+    );
+  });
+
+  test("rejects invalid or path-traversal domains and missing/non-txt cookie payloads with clear error messages", async () => {
+    const rootTmp = await makeTempRoot();
+    const cookiesDir = await makeTempRoot();
+    const textReplies: string[] = [];
+    let downloadMediaCalled = 0;
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        textReplies.push(`${params.replyTo}|${params.text}`);
+      },
+      async downloadMedia() {
+        downloadMediaCalled += 1;
+        return "should-not-download";
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader: {
+        async download() {
+          throw new Error("unused");
+        },
+      },
+      archive: {
+        async upload() {
+          throw new Error("unused");
+        },
+      },
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+      cookiesDir,
+    });
+
+    const invalidCases = [
+      { id: "m1", body: "/cookies ..\nline1" },
+      { id: "m2", body: "/cookies ../secret\nline1" },
+      { id: "m3", body: "/cookies foo/bar\nline1" },
+      { id: "m4", body: "/cookies foo\\bar\nline1" },
+      { id: "m5", body: "/cookies del .." },
+      { id: "m6", body: "/cookies" },
+      { id: "m7", body: "/cookies youtube.com" },
+    ];
+
+    for (const c of invalidCases) {
+      await handle({
+        event: "message.any",
+        session: "default",
+        payload: {
+          id: c.id,
+          from: "628000111@c.us",
+          fromMe: false,
+          body: c.body,
+          source: "app",
+        },
+      });
+    }
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "m8",
+        from: "628000111@c.us",
+        fromMe: false,
+        caption: "/cookies ../escape",
+        hasMedia: true,
+        media: {
+          url: "http://waha:3000/api/files/cookies.txt",
+          filename: "cookies.txt",
+        },
+        source: "app",
+      },
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "m9",
+        from: "628000111@c.us",
+        fromMe: false,
+        caption: "/cookies youtube.com",
+        hasMedia: true,
+        media: {
+          url: "http://waha:3000/api/files/image.png",
+          filename: "image.png",
+        },
+        source: "app",
+      },
+    });
+
+    expect(downloadMediaCalled).toBe(0);
+    expect(textReplies).toHaveLength(9);
+    expect(textReplies[0]).toContain("Invalid domain");
+    expect(textReplies[1]).toContain("Invalid domain");
+    expect(textReplies[2]).toContain("Invalid domain");
+    expect(textReplies[3]).toContain("Invalid domain");
+    expect(textReplies[4]).toContain("Invalid domain");
+    expect(textReplies[5]).toContain("Usage:");
+    expect(textReplies[6]).toContain("attach a .txt");
+    expect(textReplies[7]).toContain("Invalid domain");
+    expect(textReplies[8]).toContain(".txt");
+    expect(await readdir(cookiesDir)).toEqual([]);
   });
 });
