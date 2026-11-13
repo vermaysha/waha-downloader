@@ -65,8 +65,19 @@ export interface DownloaderPort {
   ): Promise<DownloadedMedia>;
 }
 
+export interface ArchiveUploadLink {
+  label: string;
+  url: string;
+}
+
+export interface ArchiveUploadResult {
+  primaryUrl: string;
+  links: ArchiveUploadLink[];
+}
+
 export interface MediaArchivePort {
   upload(filePath: string, objectKey: string): Promise<string>;
+  uploadAll?(filePath: string, objectKey: string): Promise<ArchiveUploadResult>;
 }
 
 export interface Logger {

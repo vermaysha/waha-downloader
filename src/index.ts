@@ -1,4 +1,4 @@
-import { R2Archive } from "./archive";
+import { createArchive } from "./archive";
 import { loadConfig } from "./config";
 import { YtDlpDownloader } from "./downloader";
 import { createMessageHandler } from "./handler";
@@ -8,7 +8,7 @@ async function main(): Promise<void> {
   const config = loadConfig();
   const waha = new WahaClient(config.waha);
   const downloader = new YtDlpDownloader();
-  const archive = new R2Archive(config.r2);
+  const archive = createArchive(config);
 
   await waha.ensureSessionStarted();
   console.log(`WAHA session "${config.waha.session}" is ready.`);

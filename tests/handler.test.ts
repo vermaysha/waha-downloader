@@ -1464,4 +1464,91 @@ describe("createMessageHandler", () => {
     ]);
     expect(textReplies).toHaveLength(2);
   });
+
+  test("multi-target archive (uploadAll) sends primary videoUrl with all labeled links in caption or text fallback", async () => {
+    const rootTmp = await makeTempRoot();
+    const sentVideos: Array<{ videoUrl: string; caption: string }> = [];
+    const sentTexts: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo(params) {
+        sentVideos.push({ videoUrl: params.videoUrl, caption: params.caption });
+      },
+      async sendText(params) {
+        sentTexts.push(params.text);
+      },
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    let nextSize = 1024;
+    const downloader: DownloaderPort = {
+      async download(_url, outputDir) {
+        const filePath = join(outputDir, "clip.mp4");
+        await Bun.write(filePath, new Uint8Array(10));
+        return { filePath, fileSize: nextSize, filename: "clip.mp4" };
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload() {
+        return "https://cdn.example.com/clip.mp4";
+      },
+      async uploadAll() {
+        return {
+          primaryUrl: "https://cdn.example.com/clip.mp4",
+          links: [
+            { label: "S3", url: "https://cdn.example.com/clip.mp4" },
+            { label: "Temp", url: "https://temp.sh/abc/clip.mp4" },
+          ],
+        };
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      maxWhatsappMediaBytes: 2048,
+      tmpDir: rootTmp,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "m-small",
+        from: "628123@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/small",
+        source: "app",
+      },
+    });
+
+    nextSize = 4096;
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "m-large",
+        from: "628123@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/large",
+        source: "app",
+      },
+    });
+
+    expect(sentVideos).toEqual([
+      {
+        videoUrl: "https://cdn.example.com/clip.mp4",
+        caption:
+          "S3: https://cdn.example.com/clip.mp4\nTemp: https://temp.sh/abc/clip.mp4",
+      },
+    ]);
+    expect(sentTexts).toEqual([
+      "S3: https://cdn.example.com/clip.mp4\nTemp: https://temp.sh/abc/clip.mp4",
+    ]);
+  });
 });

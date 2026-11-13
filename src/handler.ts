@@ -177,12 +177,24 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
             );
             const objectKey = buildObjectKey(downloaded.filename);
             deps.logger?.info(
-              `[R2] Uploading ${downloaded.filename} (${downloaded.fileSize} bytes) -> ${objectKey}`,
+              `[Archive] Uploading ${downloaded.filename} (${downloaded.fileSize} bytes) -> ${objectKey}`,
             );
-            const archiveUrl = await deps.archive.upload(
-              downloaded.filePath,
-              objectKey,
-            );
+            const uploadResult = deps.archive.uploadAll
+              ? await deps.archive.uploadAll(downloaded.filePath, objectKey)
+              : {
+                  primaryUrl: await deps.archive.upload(
+                    downloaded.filePath,
+                    objectKey,
+                  ),
+                  links: [],
+                };
+
+            const replyText =
+              uploadResult.links.length > 1
+                ? uploadResult.links
+                    .map((link) => `${link.label}: ${link.url}`)
+                    .join("\n")
+                : uploadResult.links[0]?.url ?? uploadResult.primaryUrl;
 
             if (downloaded.fileSize <= deps.maxWhatsappMediaBytes) {
               deps.logger?.info(
@@ -190,9 +202,9 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
               );
               await deps.waha.sendVideo({
                 chatId,
-                videoUrl: archiveUrl,
+                videoUrl: uploadResult.primaryUrl,
                 filename: downloaded.filename,
-                caption: archiveUrl,
+                caption: replyText,
                 replyTo: payload.id,
               });
             } else {
@@ -201,11 +213,11 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
               );
               await deps.waha.sendText({
                 chatId,
-                text: archiveUrl,
+                text: replyText,
                 replyTo: payload.id,
               });
             }
-            deps.logger?.info(`[WAHA] Done ${url} -> ${archiveUrl}`);
+            deps.logger?.info(`[WAHA] Done ${url} -> ${uploadResult.primaryUrl}`);
           } catch (error) {
             const reason =
               error instanceof Error ? error.message : "Unknown error occurred";

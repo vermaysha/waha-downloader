@@ -49,10 +49,12 @@ See [.env.example](.env.example) for the full list:
 | `WAHA_BASE_URL` | Yes | — | Base URL of your WAHA server (e.g. `http://localhost:3000`) |
 | `WAHA_API_KEY` | No | — | WAHA API key (`X-Api-Key`) |
 | `WAHA_SESSION` | No | `default` | WAHA session name |
-| `R2_ENDPOINT` | Yes | — | Cloudflare R2 S3-compatible endpoint |
-| `R2_BUCKET` | Yes | — | Target R2 bucket name |
-| `R2_ACCESS_KEY_ID` | Yes | — | R2 access key ID |
-| `R2_SECRET_ACCESS_KEY` | Yes | — | R2 secret access key |
+| `UPLOAD_TARGET` | No | `s3` | Upload destination: `s3` (R2/S3 only), `temp` (temp.sh only), or `both` |
+| `TEMP_UPLOAD_URL` | No | `https://temp.sh/upload` | Temporary file upload endpoint used when `UPLOAD_TARGET` is `temp` or `both` |
+| `R2_ENDPOINT` | When `s3`/`both` | — | Cloudflare R2 S3-compatible endpoint |
+| `R2_BUCKET` | When `s3`/`both` | — | Target R2 bucket name |
+| `R2_ACCESS_KEY_ID` | When `s3`/`both` | — | R2 access key ID |
+| `R2_SECRET_ACCESS_KEY` | When `s3`/`both` | — | R2 secret access key |
 | `R2_PUBLIC_BASE_URL` | No | — | Optional public/CDN base URL (skips presigned URLs when set) |
 | `R2_PRESIGN_TTL_SECONDS` | No | `3600` | Presigned URL expiration in seconds |
 | `DOWNLOAD_CONCURRENCY` | No | `2` | Max concurrent `yt-dlp` processes |

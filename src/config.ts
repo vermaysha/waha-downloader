@@ -1,21 +1,40 @@
+export type UploadTarget = "s3" | "temp" | "both";
+
+export interface R2Config {
+  endpoint: string;
+  bucket: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  publicBaseUrl?: string;
+  presignTtlSeconds: number;
+}
+
 export interface AppConfig {
   waha: {
     baseUrl: string;
     apiKey?: string;
     session: string;
   };
-  r2: {
-    endpoint: string;
-    bucket: string;
-    accessKeyId: string;
-    secretAccessKey: string;
-    publicBaseUrl?: string;
-    presignTtlSeconds: number;
-  };
+  uploadTarget: UploadTarget;
+  r2?: R2Config;
+  tempUploadUrl: string;
   downloadConcurrency: number;
   maxWhatsappMediaBytes: number;
   tmpDir: string;
   cookiesDir: string;
+}
+
+function parseUploadTarget(value: string | undefined): UploadTarget {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized) {
+    return "s3";
+  }
+  if (normalized === "s3" || normalized === "temp" || normalized === "both") {
+    return normalized;
+  }
+  throw new Error(
+    `Invalid UPLOAD_TARGET: ${value}. Expected one of: s3, temp, both`,
+  );
 }
 
 function requireEnv(env: Record<string, string | undefined>, key: string): string {
@@ -54,14 +73,28 @@ export function loadConfig(
   const wahaBaseUrl = stripTrailingSlash(requireEnv(env, "WAHA_BASE_URL"));
   const wahaApiKey = env.WAHA_API_KEY?.trim() || undefined;
   const wahaSession = env.WAHA_SESSION?.trim() || "default";
+  const uploadTarget = parseUploadTarget(env.UPLOAD_TARGET);
+  const tempUploadUrl = stripTrailingSlash(
+    env.TEMP_UPLOAD_URL?.trim() || "https://temp.sh/upload",
+  );
 
-  const r2Endpoint = stripTrailingSlash(requireEnv(env, "R2_ENDPOINT"));
-  const r2Bucket = requireEnv(env, "R2_BUCKET");
-  const r2AccessKeyId = requireEnv(env, "R2_ACCESS_KEY_ID");
-  const r2SecretAccessKey = requireEnv(env, "R2_SECRET_ACCESS_KEY");
-  const r2PublicBaseUrl = env.R2_PUBLIC_BASE_URL?.trim()
-    ? stripTrailingSlash(env.R2_PUBLIC_BASE_URL.trim())
-    : undefined;
+  const r2: R2Config | undefined =
+    uploadTarget === "s3" || uploadTarget === "both"
+      ? {
+          endpoint: stripTrailingSlash(requireEnv(env, "R2_ENDPOINT")),
+          bucket: requireEnv(env, "R2_BUCKET"),
+          accessKeyId: requireEnv(env, "R2_ACCESS_KEY_ID"),
+          secretAccessKey: requireEnv(env, "R2_SECRET_ACCESS_KEY"),
+          publicBaseUrl: env.R2_PUBLIC_BASE_URL?.trim()
+            ? stripTrailingSlash(env.R2_PUBLIC_BASE_URL.trim())
+            : undefined,
+          presignTtlSeconds: parsePositiveInt(
+            env.R2_PRESIGN_TTL_SECONDS,
+            3600,
+            "R2_PRESIGN_TTL_SECONDS",
+          ),
+        }
+      : undefined;
 
   return {
     waha: {
@@ -69,18 +102,9 @@ export function loadConfig(
       apiKey: wahaApiKey,
       session: wahaSession,
     },
-    r2: {
-      endpoint: r2Endpoint,
-      bucket: r2Bucket,
-      accessKeyId: r2AccessKeyId,
-      secretAccessKey: r2SecretAccessKey,
-      publicBaseUrl: r2PublicBaseUrl,
-      presignTtlSeconds: parsePositiveInt(
-        env.R2_PRESIGN_TTL_SECONDS,
-        3600,
-        "R2_PRESIGN_TTL_SECONDS",
-      ),
-    },
+    uploadTarget,
+    r2,
+    tempUploadUrl,
     downloadConcurrency: parsePositiveInt(
       env.DOWNLOAD_CONCURRENCY,
       2,
