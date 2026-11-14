@@ -1605,4 +1605,66 @@ describe("createMessageHandler", () => {
 
     expect(sentTexts).toEqual(["https://cdn.example.com/clip.mp4"]);
   });
+
+  test("formats technical errors into human-friendly messages", async () => {
+    const rootTmp = await makeTempRoot();
+    const sentTexts: string[] = [];
+    const errorsToThrow = [
+      new Error("yt-dlp failed: exit code 143"),
+      new Error("yt-dlp failed: ERROR: Unsupported URL: https://example.com"),
+      new Error("yt-dlp failed: ERROR: HTTP Error 403: Forbidden"),
+    ];
+    let idx = 0;
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {},
+      async sendText(params) {
+        sentTexts.push(params.text);
+      },
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    const downloader: DownloaderPort = {
+      async download() {
+        throw errorsToThrow[idx++]!;
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload() {
+        return "unused";
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+    });
+
+    for (const i of [1, 2, 3]) {
+      await handle({
+        event: "message.any",
+        session: "default",
+        payload: {
+          id: `m-err-${i}`,
+          from: "628123@c.us",
+          fromMe: false,
+          body: `/dl https://example.com/${i}`,
+          source: "app",
+        },
+      });
+    }
+
+    expect(sentTexts).toEqual([
+      "Download failed: Proses download melebihi batas waktu. Coba lagi nanti.",
+      "Download failed: Link tidak didukung atau bukan halaman video yang valid.",
+      "Download failed: Akses video ditolak oleh server sumber (403). Coba pakai /cookies <domain>.",
+    ]);
+  });
 });

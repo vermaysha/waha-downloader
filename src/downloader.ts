@@ -20,6 +20,8 @@ export function buildYtDlpArgs(
     "mp4",
     "-f",
     "bv*+ba/b",
+    "--socket-timeout",
+    "30",
     "-o",
     outputTemplate,
   ];
@@ -53,6 +55,12 @@ export class YtDlpDownloader implements DownloaderPort {
     ]);
 
     if (exitCode !== 0) {
+      if (exitCode === 143) {
+        const minutes = Math.max(1, Math.round(this.timeoutMs / 60_000));
+        throw new Error(
+          `Download melebihi batas waktu (${minutes} menit). Coba lagi atau naikkan DOWNLOAD_TIMEOUT_SECONDS.`,
+        );
+      }
       const detail = stderrText.trim().split("\n").pop() || `exit code ${exitCode}`;
       throw new Error(`yt-dlp failed: ${detail}`);
     }

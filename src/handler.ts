@@ -54,6 +54,46 @@ function buildObjectKey(filename: string): string {
   return `downloads/${Date.now()}-${crypto.randomUUID()}-${safeName}`;
 }
 
+function formatUserError(error: unknown): string {
+  const raw =
+    error instanceof Error && error.message.trim()
+      ? error.message.trim()
+      : "Terjadi kesalahan yang tidak diketahui";
+
+  if (/exit code 143|SIGTERM|timed out/i.test(raw)) {
+    return "Proses download melebihi batas waktu. Coba lagi nanti.";
+  }
+  if (/Sign in to confirm|login required|use --cookies/i.test(raw)) {
+    return "Video memerlukan login/cookies. Simpan cookies dulu dengan /cookies <domain>.";
+  }
+  if (/Unsupported URL/i.test(raw)) {
+    return "Link tidak didukung atau bukan halaman video yang valid.";
+  }
+  if (/HTTP Error 403/i.test(raw)) {
+    return "Akses video ditolak oleh server sumber (403). Coba pakai /cookies <domain>.";
+  }
+  if (/HTTP Error 404/i.test(raw)) {
+    return "Video tidak ditemukan atau sudah dihapus (404).";
+  }
+  if (/HTTP Error 429/i.test(raw)) {
+    return "Terlalu banyak permintaan ke server sumber (429). Coba lagi beberapa saat lagi.";
+  }
+  if (/Google Drive auth failed/i.test(raw)) {
+    return "Gagal autentikasi Google Drive. Periksa kredensial Google Drive di server.";
+  }
+  if (/temp\.sh upload failed \(413\)/i.test(raw)) {
+    return "Gagal upload ke temp.sh karena ukuran file melebihi batas.";
+  }
+  if (/ENAMETOOLONG|File name too long/i.test(raw)) {
+    return "Nama file terlalu panjang untuk disimpan di server.";
+  }
+  if (/ECONNREFUSED|ETIMEDOUT|ENOTFOUND/i.test(raw)) {
+    return "Gagal terhubung ke server tujuan (masalah jaringan).";
+  }
+
+  return raw.replace(/^yt-dlp failed:\s*ERROR:\s*/i, "");
+}
+
 const HELP_TEXT = [
   "WAHA Downloader Commands:",
   "",
@@ -244,9 +284,10 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
             }
             deps.logger?.info(`[WAHA] Done ${url} -> ${uploadResult.primaryUrl}`);
           } catch (error) {
-            const reason =
+            const rawReason =
               error instanceof Error ? error.message : "Unknown error occurred";
-            deps.logger?.error(`[WAHA] Failed ${url}: ${reason}`, error);
+            const reason = formatUserError(error);
+            deps.logger?.error(`[WAHA] Failed ${url}: ${rawReason}`, error);
             const prefix =
               urls.length > 1 ? `Download failed (${url})` : "Download failed";
             try {
