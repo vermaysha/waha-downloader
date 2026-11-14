@@ -1,4 +1,5 @@
 import { createArchive } from "./archive";
+import { cleanupTempStorage } from "./cleanup";
 import { loadConfig } from "./config";
 import { YtDlpDownloader } from "./downloader";
 import { createMessageHandler } from "./handler";
@@ -6,6 +7,7 @@ import { WahaClient, connectWahaWebSocket } from "./waha";
 
 async function main(): Promise<void> {
   const config = loadConfig();
+  await cleanupTempStorage(config.tmpDir);
   const waha = new WahaClient(config.waha);
   const downloader = new YtDlpDownloader(config.downloadTimeoutMs);
   const archive = createArchive(config);
