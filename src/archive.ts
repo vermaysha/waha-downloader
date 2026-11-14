@@ -114,24 +114,31 @@ export class CompositeArchive implements MediaArchivePort {
     filePath: string,
     objectKey: string,
   ): Promise<ArchiveUploadResult> {
-    const results = await Promise.all(
-      this.targets.map(async ({ label, archive }) => {
-        if (archive.uploadAll) {
-          const res = await archive.uploadAll(filePath, objectKey);
-          return {
-            primaryUrl: res.primaryUrl,
-            link: { label, url: res.links[0]?.url ?? res.primaryUrl },
-            preferLocalFile: Boolean(res.preferLocalFile),
-          };
-        }
+    // Upload targets sequentially to avoid multiplying memory usage on low-RAM servers
+    // when archiving large video files to multiple destinations.
+    const results: Array<{
+      primaryUrl: string;
+      link: { label: string; url: string };
+      preferLocalFile: boolean;
+    }> = [];
+
+    for (const { label, archive } of this.targets) {
+      if (archive.uploadAll) {
+        const res = await archive.uploadAll(filePath, objectKey);
+        results.push({
+          primaryUrl: res.primaryUrl,
+          link: { label, url: res.links[0]?.url ?? res.primaryUrl },
+          preferLocalFile: Boolean(res.preferLocalFile),
+        });
+      } else {
         const url = await archive.upload(filePath, objectKey);
-        return {
+        results.push({
           primaryUrl: url,
           link: { label, url },
           preferLocalFile: false,
-        };
-      }),
-    );
+        });
+      }
+    }
 
     return {
       primaryUrl: results[0]!.primaryUrl,
