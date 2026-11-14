@@ -162,4 +162,28 @@ describe("loadConfig", () => {
       }),
     ).toThrow(/Invalid UPLOAD_TARGET/);
   });
+
+  test("supports boolean UPLOAD_S3 / UPLOAD_TEMP / UPLOAD_GDRIVE flags when UPLOAD_TARGET is unset", () => {
+    const tempAndGdrive = loadConfig({
+      WAHA_BASE_URL: "http://localhost:3000",
+      UPLOAD_S3: "false",
+      UPLOAD_TEMP: "true",
+      UPLOAD_GDRIVE: "true",
+      GDRIVE_CLIENT_ID: "cid",
+      GDRIVE_CLIENT_SECRET: "csecret",
+      GDRIVE_REFRESH_TOKEN: "rtoken",
+    });
+    expect(tempAndGdrive.uploadTargets).toEqual(["temp", "gdrive"]);
+    expect(tempAndGdrive.r2).toBeUndefined();
+    expect(tempAndGdrive.gdrive).toBeDefined();
+
+    expect(() =>
+      loadConfig({
+        WAHA_BASE_URL: "http://localhost:3000",
+        UPLOAD_S3: "false",
+        UPLOAD_TEMP: "false",
+        UPLOAD_GDRIVE: "false",
+      }),
+    ).toThrow(/At least one upload target must be enabled/);
+  });
 });

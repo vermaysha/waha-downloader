@@ -1551,4 +1551,58 @@ describe("createMessageHandler", () => {
       "S3: https://cdn.example.com/clip.mp4\nTemp: https://temp.sh/abc/clip.mp4",
     ]);
   });
+
+  test("falls back to sendText with archive link when sendVideo fails (e.g. WAHA 503)", async () => {
+    const rootTmp = await makeTempRoot();
+    const sentTexts: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo() {
+        throw new Error("WAHA POST /api/sendVideo failed (503): Service Unavailable");
+      },
+      async sendText(params) {
+        sentTexts.push(params.text);
+      },
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    const downloader: DownloaderPort = {
+      async download(_url, outputDir) {
+        const filePath = join(outputDir, "clip.mp4");
+        await Bun.write(filePath, new Uint8Array(100));
+        return { filePath, fileSize: 100, filename: "clip.mp4" };
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload() {
+        return "https://cdn.example.com/clip.mp4";
+      },
+    };
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+    });
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "m-503",
+        from: "628123@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/video",
+        source: "app",
+      },
+    });
+
+    expect(sentTexts).toEqual(["https://cdn.example.com/clip.mp4"]);
+  });
 });

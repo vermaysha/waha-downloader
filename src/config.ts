@@ -99,6 +99,43 @@ function parseBooleanEnv(
   throw new Error(`Invalid boolean for ${key}: ${value}`);
 }
 
+function resolveUploadTargets(
+  env: Record<string, string | undefined>,
+): UploadTarget[] {
+  const rawTarget = env.UPLOAD_TARGET?.trim();
+  if (rawTarget) {
+    return parseUploadTargets(rawTarget);
+  }
+
+  const hasFlag =
+    env.UPLOAD_S3 !== undefined ||
+    env.UPLOAD_TEMP !== undefined ||
+    env.UPLOAD_GDRIVE !== undefined;
+
+  if (!hasFlag) {
+    return ["s3"];
+  }
+
+  const targets: UploadTarget[] = [];
+  if (parseBooleanEnv(env.UPLOAD_S3, false, "UPLOAD_S3")) {
+    targets.push("s3");
+  }
+  if (parseBooleanEnv(env.UPLOAD_TEMP, false, "UPLOAD_TEMP")) {
+    targets.push("temp");
+  }
+  if (parseBooleanEnv(env.UPLOAD_GDRIVE, false, "UPLOAD_GDRIVE")) {
+    targets.push("gdrive");
+  }
+
+  if (targets.length === 0) {
+    throw new Error(
+      "At least one upload target must be enabled (UPLOAD_S3, UPLOAD_TEMP, or UPLOAD_GDRIVE)",
+    );
+  }
+
+  return targets;
+}
+
 function loadGoogleDriveConfig(
   env: Record<string, string | undefined>,
 ): GoogleDriveConfig {
@@ -201,7 +238,7 @@ export function loadConfig(
   const wahaBaseUrl = stripTrailingSlash(requireEnv(env, "WAHA_BASE_URL"));
   const wahaApiKey = env.WAHA_API_KEY?.trim() || undefined;
   const wahaSession = env.WAHA_SESSION?.trim() || "default";
-  const uploadTargets = parseUploadTargets(env.UPLOAD_TARGET);
+  const uploadTargets = resolveUploadTargets(env);
   const tempUploadUrl = stripTrailingSlash(
     env.TEMP_UPLOAD_URL?.trim() || "https://temp.sh/upload",
   );

@@ -49,7 +49,8 @@ See [.env.example](.env.example) for the full list:
 | `WAHA_BASE_URL` | Yes | — | Base URL of your WAHA server (e.g. `http://localhost:3000`) |
 | `WAHA_API_KEY` | No | — | WAHA API key (`X-Api-Key`) |
 | `WAHA_SESSION` | No | `default` | WAHA session name |
-| `UPLOAD_TARGET` | No | `s3` | Upload destination: `s3`, `temp`, `gdrive`, `both` (`s3,temp`), `all` (`s3,temp,gdrive`), or comma-separated |
+| `UPLOAD_TARGET` | No | `s3` | Upload destination: `s3`, `temp`, `gdrive`, `both` (`s3,temp`), `all` (`s3,temp,gdrive`), or comma-separated (e.g. `temp,gdrive`) |
+| `UPLOAD_S3` / `UPLOAD_TEMP` / `UPLOAD_GDRIVE` | No | — | Optional boolean toggles (`true`/`false`) when `UPLOAD_TARGET` is unset |
 | `TEMP_UPLOAD_URL` | No | `https://temp.sh/upload` | Temporary file upload endpoint used when `UPLOAD_TARGET` includes `temp` |
 | `GDRIVE_CLIENT_ID` | When `gdrive` (OAuth) | — | Google OAuth2 client ID |
 | `GDRIVE_CLIENT_SECRET` | When `gdrive` (OAuth) | — | Google OAuth2 client secret |

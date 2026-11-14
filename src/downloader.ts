@@ -19,7 +19,7 @@ export function buildYtDlpArgs(
     "--merge-output-format",
     "mp4",
     "-f",
-    "bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4]/bv*+ba/b",
+    "bv*+ba/b",
     "-o",
     outputTemplate,
   ];

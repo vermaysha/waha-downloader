@@ -119,19 +119,22 @@ export class CompositeArchive implements MediaArchivePort {
         if (archive.uploadAll) {
           const res = await archive.uploadAll(filePath, objectKey);
           return {
-            link: { label, url: res.primaryUrl },
+            primaryUrl: res.primaryUrl,
+            link: { label, url: res.links[0]?.url ?? res.primaryUrl },
             preferLocalFile: Boolean(res.preferLocalFile),
           };
         }
+        const url = await archive.upload(filePath, objectKey);
         return {
-          link: { label, url: await archive.upload(filePath, objectKey) },
+          primaryUrl: url,
+          link: { label, url },
           preferLocalFile: false,
         };
       }),
     );
 
     return {
-      primaryUrl: results[0]!.link.url,
+      primaryUrl: results[0]!.primaryUrl,
       links: results.map((r) => r.link),
       preferLocalFile: results[0]!.preferLocalFile,
     };

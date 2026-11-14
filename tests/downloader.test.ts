@@ -25,12 +25,15 @@ describe("buildYtDlpArgs", () => {
     );
   });
 
-  test("uses byte-bounded output template to prevent ENAMETOOLONG on multi-byte titles", () => {
+  test("uses byte-bounded output template and highest-quality format selector", () => {
     const args = buildYtDlpArgs("https://example.com/video", "/tmp/job-3");
     const outputIdx = args.indexOf("-o");
     expect(outputIdx).toBeGreaterThan(-1);
     expect(args[outputIdx + 1]).toBe(
       "/tmp/job-3/%(title).80B-%(id).40B.%(ext)s",
     );
+    const formatIdx = args.indexOf("-f");
+    expect(formatIdx).toBeGreaterThan(-1);
+    expect(args[formatIdx + 1]).toBe("bv*+ba/b");
   });
 });

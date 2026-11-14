@@ -208,16 +208,30 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
               deps.logger?.info(
                 `[WAHA] Replying video to ${chatId} (msg=${payload.id})`,
               );
-              await deps.waha.sendVideo({
-                chatId,
-                videoUrl: uploadResult.primaryUrl,
-                filename: downloaded.filename,
-                caption: replyText,
-                replyTo: payload.id,
-                ...(uploadResult.preferLocalFile
-                  ? { filePath: downloaded.filePath }
-                  : {}),
-              });
+              try {
+                await deps.waha.sendVideo({
+                  chatId,
+                  videoUrl: uploadResult.primaryUrl,
+                  filename: downloaded.filename,
+                  caption: replyText,
+                  replyTo: payload.id,
+                  ...(uploadResult.preferLocalFile
+                    ? { filePath: downloaded.filePath }
+                    : {}),
+                });
+              } catch (sendErr) {
+                const sendReason =
+                  sendErr instanceof Error ? sendErr.message : String(sendErr);
+                deps.logger?.error(
+                  `[WAHA] sendVideo failed, falling back to link reply for ${url}: ${sendReason}`,
+                  sendErr,
+                );
+                await deps.waha.sendText({
+                  chatId,
+                  text: replyText,
+                  replyTo: payload.id,
+                });
+              }
             } else {
               deps.logger?.info(
                 `[WAHA] Video exceeds limit (${downloaded.fileSize} bytes), replying link to ${chatId} (msg=${payload.id})`,
@@ -235,11 +249,18 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
             deps.logger?.error(`[WAHA] Failed ${url}: ${reason}`, error);
             const prefix =
               urls.length > 1 ? `Download failed (${url})` : "Download failed";
-            await deps.waha.sendText({
-              chatId,
-              text: `${prefix}: ${reason}`,
-              replyTo: payload.id,
-            });
+            try {
+              await deps.waha.sendText({
+                chatId,
+                text: `${prefix}: ${reason}`,
+                replyTo: payload.id,
+              });
+            } catch (notifyErr) {
+              deps.logger?.error(
+                `[WAHA] Failed to send error reply for ${url}`,
+                notifyErr,
+              );
+            }
           } finally {
             await Promise.all([
               rm(workDir, { recursive: true, force: true }),

@@ -110,6 +110,38 @@ describe("archive adapters", () => {
       ],
       preferLocalFile: false,
     });
+
+    const gdriveLike: MediaArchivePort = {
+      async upload() {
+        return "https://drive.google.com/file/d/id-1/view";
+      },
+      async uploadAll() {
+        return {
+          primaryUrl:
+            "https://drive.usercontent.google.com/download?id=id-1&export=download&confirm=t",
+          links: [
+            { label: "GDrive", url: "https://drive.google.com/file/d/id-1/view" },
+          ],
+          preferLocalFile: false,
+        };
+      },
+    };
+
+    const threeTargets = new CompositeArchive([
+      { label: "S3", archive: s3 },
+      { label: "Temp", archive: temp },
+      { label: "GDrive", archive: gdriveLike },
+    ]);
+
+    expect(await threeTargets.uploadAll("/tmp/clip.mp4", "downloads/clip.mp4")).toEqual({
+      primaryUrl: "https://cdn.example.com/downloads/clip.mp4",
+      links: [
+        { label: "S3", url: "https://cdn.example.com/downloads/clip.mp4" },
+        { label: "Temp", url: "https://temp.sh/xyz/clip.mp4" },
+        { label: "GDrive", url: "https://drive.google.com/file/d/id-1/view" },
+      ],
+      preferLocalFile: false,
+    });
   });
 
   test("createArchive selects R2Archive, TempShArchive, or CompositeArchive from config", () => {
