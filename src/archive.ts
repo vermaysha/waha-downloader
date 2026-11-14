@@ -1,5 +1,5 @@
 import { createSign } from "node:crypto";
-import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { mkdtemp, readdir, rm, statfs } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, extname, join } from "node:path";
 import { S3Client } from "bun";
@@ -128,11 +128,23 @@ async function splitVideoWithFfmpeg(
   return entries.map((name) => join(workDir, name));
 }
 
+export type AvailableBytesFn = (dirPath: string) => Promise<number>;
+
+async function defaultAvailableBytes(dirPath: string): Promise<number> {
+  const stats = await statfs(dirPath);
+  return Number(stats.bavail) * Number(stats.bsize);
+}
+
+function formatGiB(bytes: number): string {
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 export interface TempShArchiveConfig {
   uploadUrl?: string;
   fetchFn?: FetchLike;
   splitThresholdBytes?: number;
   splitFn?: VideoSplitter;
+  availableBytesFn?: AvailableBytesFn;
 }
 
 /**
@@ -144,6 +156,7 @@ export class TempShArchive implements MediaArchivePort {
   private readonly fetchFn: FetchLike;
   private readonly splitThresholdBytes: number;
   private readonly splitFn: VideoSplitter;
+  private readonly availableBytesFn: AvailableBytesFn;
 
   constructor(config: TempShArchiveConfig = {}) {
     this.uploadUrl = config.uploadUrl || "https://temp.sh/upload";
@@ -151,6 +164,7 @@ export class TempShArchive implements MediaArchivePort {
     this.splitThresholdBytes =
       config.splitThresholdBytes ?? TEMP_SH_SPLIT_THRESHOLD_BYTES;
     this.splitFn = config.splitFn ?? splitVideoWithFfmpeg;
+    this.availableBytesFn = config.availableBytesFn ?? defaultAvailableBytes;
   }
 
   private async uploadSingleFile(filePath: string): Promise<string> {
@@ -238,6 +252,14 @@ export class TempShArchive implements MediaArchivePort {
 
     const splitDir = await mkdtemp(join(tmpdir(), "waha-dl-split-"));
     try {
+      const requiredBytes = file.size + 64 * 1024 * 1024;
+      const availableBytes = await this.availableBytesFn(splitDir);
+      if (availableBytes < requiredBytes) {
+        throw new Error(
+          `Ruang disk tidak cukup untuk memecah video ke temp.sh (${formatGiB(availableBytes)} tersedia, butuh minimal ${formatGiB(requiredBytes)}).`,
+        );
+      }
+
       const partPaths = await this.splitFn(
         filePath,
         this.splitThresholdBytes,

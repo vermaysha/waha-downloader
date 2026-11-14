@@ -387,4 +387,23 @@ describe("archive adapters", () => {
       { label: "GDrive", url: "https://drive.google.com/file/d/big-1/view" },
     ]);
   });
+
+  test("TempShArchive rejects split when available disk space is insufficient", async () => {
+    const filePath = await makeTempFile("big.mp4", "0123456789abcdef");
+    let splitCalled = false;
+
+    const tempArchive = new TempShArchive({
+      splitThresholdBytes: 10,
+      availableBytesFn: async () => 1024, // far below file.size + 64 MiB
+      splitFn: async () => {
+        splitCalled = true;
+        return [];
+      },
+    });
+
+    await expect(
+      tempArchive.uploadAll(filePath, "downloads/big.mp4"),
+    ).rejects.toThrow(/Ruang disk tidak cukup/);
+    expect(splitCalled).toBe(false);
+  });
 });
