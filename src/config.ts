@@ -42,6 +42,7 @@ export interface AppConfig {
   tempUploadUrl: string;
   downloadConcurrency: number;
   downloadTimeoutMs: number;
+  downloadCacheTtlMs: number;
   maxWhatsappMediaBytes: number;
   tmpDir: string;
   cookiesDir: string;
@@ -265,6 +266,27 @@ export function loadConfig(
     ? loadGoogleDriveConfig(env)
     : undefined;
 
+  const downloadTimeoutMs =
+    parsePositiveInt(
+      env.DOWNLOAD_TIMEOUT_SECONDS,
+      300,
+      "DOWNLOAD_TIMEOUT_SECONDS",
+    ) * 1000;
+
+  let defaultCacheTtlSeconds = 24 * 60 * 60;
+  if (uploadTargets.includes("s3") && r2 && !r2.publicBaseUrl) {
+    defaultCacheTtlSeconds = Math.max(60, r2.presignTtlSeconds - 60);
+  }
+  const downloadCacheTtlMs = env.DOWNLOAD_CACHE_TTL_SECONDS?.trim()
+    ? Number(env.DOWNLOAD_CACHE_TTL_SECONDS) === 0
+      ? 0
+      : parsePositiveInt(
+          env.DOWNLOAD_CACHE_TTL_SECONDS,
+          defaultCacheTtlSeconds,
+          "DOWNLOAD_CACHE_TTL_SECONDS",
+        ) * 1000
+    : defaultCacheTtlSeconds * 1000;
+
   return {
     waha: {
       baseUrl: wahaBaseUrl,
@@ -280,12 +302,8 @@ export function loadConfig(
       2,
       "DOWNLOAD_CONCURRENCY",
     ),
-    downloadTimeoutMs:
-      parsePositiveInt(
-        env.DOWNLOAD_TIMEOUT_SECONDS,
-        300,
-        "DOWNLOAD_TIMEOUT_SECONDS",
-      ) * 1000,
+    downloadTimeoutMs,
+    downloadCacheTtlMs,
     maxWhatsappMediaBytes: parsePositiveInt(
       env.MAX_WHATSAPP_MEDIA_BYTES,
       50 * 1024 * 1024,

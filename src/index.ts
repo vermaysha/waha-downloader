@@ -18,6 +18,7 @@ async function main(): Promise<void> {
     downloader,
     archive,
     downloadConcurrency: config.downloadConcurrency,
+    downloadCacheTtlMs: config.downloadCacheTtlMs,
     maxWhatsappMediaBytes: config.maxWhatsappMediaBytes,
     tmpDir: config.tmpDir,
     cookiesDir: config.cookiesDir,

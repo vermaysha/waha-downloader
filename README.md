@@ -68,6 +68,7 @@ See [.env.example](.env.example) for the full list:
 | `R2_PRESIGN_TTL_SECONDS` | No | `3600` | Presigned URL expiration in seconds |
 | `DOWNLOAD_CONCURRENCY` | No | `2` | Max concurrent `yt-dlp` processes |
 | `DOWNLOAD_TIMEOUT_SECONDS` | No | `300` | `yt-dlp` idle timeout in seconds (resets whenever output is received; default 5 minutes) |
+| `DOWNLOAD_CACHE_TTL_SECONDS` | No | Auto | Completed download cache TTL in seconds (auto-derived from active upload target; `0` disables) |
 | `MAX_WHATSAPP_MEDIA_BYTES` | No | `52428800` | Max video size (bytes) sent directly via WhatsApp (50 MiB) |
 | `TMP_DIR` | No | `tmp` | Temporary working directory for downloads and per-job cookies |
 | `COOKIES_DIR` | No | `./cookies` | Directory storing `<requester>/<domain>.txt` cookie profiles |

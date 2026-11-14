@@ -1,5 +1,7 @@
 import { createSign } from "node:crypto";
-import { basename } from "node:path";
+import { mkdtemp, readdir, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { basename, extname, join } from "node:path";
 import { S3Client } from "bun";
 import type { AppConfig, GoogleDriveConfig } from "./config";
 import type { ArchiveUploadResult, MediaArchivePort } from "./types";
@@ -48,24 +50,110 @@ export type FetchLike = (
   init?: RequestInit,
 ) => Promise<Response>;
 
+const TEMP_SH_SPLIT_THRESHOLD_BYTES = 3_800_000_000; // ~3.8 GB (safe margin under temp.sh 4 GB limit)
+
+export type VideoSplitter = (
+  filePath: string,
+  targetPartBytes: number,
+  workDir: string,
+) => Promise<string[]>;
+
+async function splitVideoWithFfmpeg(
+  filePath: string,
+  targetPartBytes: number,
+  workDir: string,
+): Promise<string[]> {
+  const file = Bun.file(filePath);
+  const probe = Bun.spawn(
+    [
+      "ffprobe",
+      "-v",
+      "error",
+      "-show_entries",
+      "format=duration",
+      "-of",
+      "default=noprint_wrappers=1:nokey=1",
+      filePath,
+    ],
+    { stdout: "pipe", stderr: "pipe" },
+  );
+  const [probeCode, probeOut] = await Promise.all([
+    probe.exited,
+    new Response(probe.stdout).text(),
+  ]);
+  const durationSec = probeCode === 0 ? Number.parseFloat(probeOut.trim()) : 0;
+  const numParts = Math.max(2, Math.ceil(file.size / targetPartBytes));
+  const segmentTime =
+    Number.isFinite(durationSec) && durationSec > 0
+      ? Math.max(10, Math.floor(durationSec / numParts))
+      : 600;
+
+  const ext = extname(filePath) || ".mp4";
+  const stem = basename(filePath, ext);
+  const outPattern = join(workDir, `${stem}.part%03d${ext}`);
+
+  const proc = Bun.spawn(
+    [
+      "ffmpeg",
+      "-y",
+      "-i",
+      filePath,
+      "-c",
+      "copy",
+      "-map",
+      "0",
+      "-f",
+      "segment",
+      "-segment_time",
+      String(segmentTime),
+      "-reset_timestamps",
+      "1",
+      outPattern,
+    ],
+    { stdout: "pipe", stderr: "pipe" },
+  );
+  const [exitCode, stderrText] = await Promise.all([
+    proc.exited,
+    new Response(proc.stderr).text(),
+  ]);
+  if (exitCode !== 0) {
+    const detail = stderrText.trim().split("\n").pop() || `exit code ${exitCode}`;
+    throw new Error(`ffmpeg split failed: ${detail}`);
+  }
+
+  const entries = (await readdir(workDir)).sort();
+  if (entries.length === 0) {
+    throw new Error("ffmpeg split produced no output segments");
+  }
+  return entries.map((name) => join(workDir, name));
+}
+
 export interface TempShArchiveConfig {
   uploadUrl?: string;
   fetchFn?: FetchLike;
+  splitThresholdBytes?: number;
+  splitFn?: VideoSplitter;
 }
 
 /**
- * Uploads downloaded media to temp.sh (multipart POST) and returns the temporary URL.
+ * Uploads downloaded media to temp.sh (streaming multipart POST with backpressure)
+ * and splits videos > 4 GB into playable MP4 parts using ffmpeg.
  */
 export class TempShArchive implements MediaArchivePort {
   private readonly uploadUrl: string;
   private readonly fetchFn: FetchLike;
+  private readonly splitThresholdBytes: number;
+  private readonly splitFn: VideoSplitter;
 
   constructor(config: TempShArchiveConfig = {}) {
     this.uploadUrl = config.uploadUrl || "https://temp.sh/upload";
     this.fetchFn = config.fetchFn ?? fetch;
+    this.splitThresholdBytes =
+      config.splitThresholdBytes ?? TEMP_SH_SPLIT_THRESHOLD_BYTES;
+    this.splitFn = config.splitFn ?? splitVideoWithFfmpeg;
   }
 
-  async upload(filePath: string, _objectKey: string): Promise<string> {
+  private async uploadSingleFile(filePath: string): Promise<string> {
     const file = Bun.file(filePath);
     const filename = basename(filePath).replace(/["\r\n]/g, "_");
     const boundary = `----wahaDl${crypto.randomUUID().replace(/-/g, "")}`;
@@ -76,21 +164,33 @@ export class TempShArchive implements MediaArchivePort {
     const footer = encoder.encode(`\r\n--${boundary}--\r\n`);
     const totalLength = header.byteLength + file.size + footer.byteLength;
 
+    let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+    let headerSent = false;
+    let footerSent = false;
+
     const bodyStream = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        try {
+      async pull(controller) {
+        if (!headerSent) {
+          headerSent = true;
           controller.enqueue(header);
-          const reader = file.stream().getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            controller.enqueue(value);
-          }
+          return;
+        }
+        if (!reader) {
+          reader = file.stream().getReader();
+        }
+        const { done, value } = await reader.read();
+        if (!done && value) {
+          controller.enqueue(value);
+          return;
+        }
+        if (!footerSent) {
+          footerSent = true;
           controller.enqueue(footer);
           controller.close();
-        } catch (err) {
-          controller.error(err);
         }
+      },
+      async cancel() {
+        await reader?.cancel();
       },
     });
 
@@ -116,6 +216,47 @@ export class TempShArchive implements MediaArchivePort {
     }
 
     return url;
+  }
+
+  async upload(filePath: string, objectKey: string): Promise<string> {
+    const result = await this.uploadAll(filePath, objectKey);
+    return result.primaryUrl;
+  }
+
+  async uploadAll(
+    filePath: string,
+    _objectKey: string,
+  ): Promise<ArchiveUploadResult> {
+    const file = Bun.file(filePath);
+    if (file.size <= this.splitThresholdBytes) {
+      const url = await this.uploadSingleFile(filePath);
+      return {
+        primaryUrl: url,
+        links: [{ label: "Temp", url }],
+      };
+    }
+
+    const splitDir = await mkdtemp(join(tmpdir(), "waha-dl-split-"));
+    try {
+      const partPaths = await this.splitFn(
+        filePath,
+        this.splitThresholdBytes,
+        splitDir,
+      );
+      const urls: string[] = [];
+      for (const partPath of partPaths) {
+        urls.push(await this.uploadSingleFile(partPath));
+      }
+      return {
+        primaryUrl: urls[0]!,
+        links: urls.map((url, idx) => ({
+          label: urls.length === 1 ? "Temp" : `Temp (${idx + 1}/${urls.length})`,
+          url,
+        })),
+      };
+    } finally {
+      await rm(splitDir, { recursive: true, force: true });
+    }
   }
 }
 
@@ -147,7 +288,7 @@ export class CompositeArchive implements MediaArchivePort {
     // when archiving large video files to multiple destinations.
     const results: Array<{
       primaryUrl: string;
-      link: { label: string; url: string };
+      links: Array<{ label: string; url: string }>;
       preferLocalFile: boolean;
     }> = [];
 
@@ -156,14 +297,17 @@ export class CompositeArchive implements MediaArchivePort {
         const res = await archive.uploadAll(filePath, objectKey);
         results.push({
           primaryUrl: res.primaryUrl,
-          link: { label, url: res.links[0]?.url ?? res.primaryUrl },
+          links:
+            res.links.length > 1
+              ? res.links
+              : [{ label, url: res.links[0]?.url ?? res.primaryUrl }],
           preferLocalFile: Boolean(res.preferLocalFile),
         });
       } else {
         const url = await archive.upload(filePath, objectKey);
         results.push({
           primaryUrl: url,
-          link: { label, url },
+          links: [{ label, url }],
           preferLocalFile: false,
         });
       }
@@ -171,7 +315,7 @@ export class CompositeArchive implements MediaArchivePort {
 
     return {
       primaryUrl: results[0]!.primaryUrl,
-      links: results.map((r) => r.link),
+      links: results.flatMap((r) => r.links),
       preferLocalFile: results[0]!.preferLocalFile,
     };
   }
@@ -340,7 +484,7 @@ export class GoogleDriveArchive implements MediaArchivePort {
       let offset = 0;
       while (offset < file.size) {
         const end = Math.min(offset + CHUNK_SIZE, file.size);
-        const chunk = file.slice(offset, end);
+        const chunk = new Uint8Array(await file.slice(offset, end).arrayBuffer());
         const uploadRes = await this.fetchFn(uploadUrl, {
           method: "PUT",
           headers: {

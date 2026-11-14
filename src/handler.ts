@@ -1,6 +1,10 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
-import { createCookieStore, createTempCookieCopy } from "./cookies";
+import {
+  createCookieStore,
+  createTempCookieCopy,
+  normalizeRequester,
+} from "./cookies";
 import { handleCookiesCommand } from "./cookies-command";
 import { createConcurrencyQueue } from "./queue";
 import type {
@@ -16,6 +20,7 @@ export interface MessageHandlerDeps {
   downloader: DownloaderPort;
   archive: MediaArchivePort;
   downloadConcurrency?: number;
+  downloadCacheTtlMs?: number;
   maxWhatsappMediaBytes: number;
   tmpDir: string;
   cookiesDir?: string;
@@ -46,7 +51,7 @@ function parseDlUrls(text: string): string[] {
   if (!rest) {
     return [];
   }
-  return rest.split(/\s+/).filter(isValidHttpUrl);
+  return Array.from(new Set(rest.split(/\s+/).filter(isValidHttpUrl)));
 }
 
 function buildObjectKey(filename: string): string {
@@ -104,6 +109,20 @@ const HELP_TEXT = [
   "• /help or /h — Show this help message",
 ].join("\n");
 
+interface CompletedUploadRecord {
+  filename: string;
+  fileSize: number;
+  uploadResult: {
+    primaryUrl: string;
+    links: Array<{ label: string; url: string }>;
+    preferLocalFile?: boolean;
+  };
+  expiresAtMs: number;
+}
+
+const MAX_SEEN_MESSAGE_IDS = 1000;
+const MAX_COMPLETED_CACHE_ENTRIES = 500;
+
 /**
  * Creates the primary application seam for handling WAHA `message.any` events.
  */
@@ -112,6 +131,42 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
   const cookieStore = deps.cookiesDir
     ? createCookieStore(deps.cookiesDir)
     : undefined;
+  const cacheTtlMs = deps.downloadCacheTtlMs ?? 60 * 60 * 1000;
+  const seenMessageIds = new Set<string>();
+  const inFlightDownloads = new Map<string, Promise<CompletedUploadRecord>>();
+  const completedDownloads = new Map<string, CompletedUploadRecord>();
+
+  const rememberMessageId = (id: string): boolean => {
+    if (!id) return true;
+    if (seenMessageIds.has(id)) {
+      return false;
+    }
+    seenMessageIds.add(id);
+    if (seenMessageIds.size > MAX_SEEN_MESSAGE_IDS) {
+      const oldest = seenMessageIds.values().next().value;
+      if (oldest) seenMessageIds.delete(oldest);
+    }
+    return true;
+  };
+
+  const getCachedDownload = (key: string): CompletedUploadRecord | undefined => {
+    const entry = completedDownloads.get(key);
+    if (!entry) return undefined;
+    if (Date.now() >= entry.expiresAtMs) {
+      completedDownloads.delete(key);
+      return undefined;
+    }
+    return entry;
+  };
+
+  const setCachedDownload = (key: string, record: CompletedUploadRecord) => {
+    if (cacheTtlMs <= 0) return;
+    completedDownloads.set(key, record);
+    if (completedDownloads.size > MAX_COMPLETED_CACHE_ENTRIES) {
+      const oldest = completedDownloads.keys().next().value;
+      if (oldest) completedDownloads.delete(oldest);
+    }
+  };
 
   return async function handleWahaEvent(event: WahaMessageEvent): Promise<void> {
     if (event.event !== "message.any") {
@@ -120,6 +175,9 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
 
     const { payload } = event;
     if (payload.source === "api") {
+      return;
+    }
+    if (!rememberMessageId(payload.id)) {
       return;
     }
 
@@ -188,51 +246,99 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
     await mkdir(deps.tmpDir, { recursive: true });
 
     await Promise.all(
-      urls.map((url) =>
-        enqueue(async () => {
-          const workDir = await mkdtemp(join(deps.tmpDir, "dl-"));
-          let tempCookiePath: string | undefined;
+      urls.map(async (url) => {
+        try {
+          const profilePath = cookieStore
+            ? await cookieStore.resolvePathForUrl(payload, url)
+            : undefined;
+          const cacheKey = profilePath
+            ? `user:${normalizeRequester(payload)}:${url}`
+            : `public:${url}`;
 
-          try {
-            if (cookieStore) {
-              const profilePath = await cookieStore.resolvePathForUrl(
-                payload,
-                url,
+          let record = getCachedDownload(cacheKey);
+          let localFilePath: string | undefined;
+          let cleanupWorkDir: string | undefined;
+
+          if (record) {
+            deps.logger?.info(`[Cache] Hit for ${url} (msg=${payload.id})`);
+          } else {
+            let sharedPromise = inFlightDownloads.get(cacheKey);
+            if (sharedPromise) {
+              deps.logger?.info(
+                `[Dedupe] Coalescing in-flight download for ${url} (msg=${payload.id})`,
               );
-              if (profilePath) {
-                tempCookiePath = await createTempCookieCopy(
-                  profilePath,
-                  deps.tmpDir,
-                );
+              record = await sharedPromise;
+            } else {
+              sharedPromise = enqueue(async () => {
+                const workDir = await mkdtemp(join(deps.tmpDir, "dl-"));
+                let tempCookiePath: string | undefined;
+
+                try {
+                  if (profilePath) {
+                    tempCookiePath = await createTempCookieCopy(
+                      profilePath,
+                      deps.tmpDir,
+                    );
+                  }
+
+                  deps.logger?.info(
+                    `[yt-dlp] Downloading ${url} (cookies=${tempCookiePath ? "yes" : "no"})`,
+                  );
+                  const downloaded = await deps.downloader.download(
+                    url,
+                    workDir,
+                    tempCookiePath ? { cookiesFile: tempCookiePath } : undefined,
+                  );
+                  const objectKey = buildObjectKey(downloaded.filename);
+                  deps.logger?.info(
+                    `[Archive] Uploading ${downloaded.filename} (${downloaded.fileSize} bytes) -> ${objectKey}`,
+                  );
+                  const uploadResult: CompletedUploadRecord["uploadResult"] =
+                    deps.archive.uploadAll
+                      ? await deps.archive.uploadAll(
+                          downloaded.filePath,
+                          objectKey,
+                        )
+                      : {
+                          primaryUrl: await deps.archive.upload(
+                            downloaded.filePath,
+                            objectKey,
+                          ),
+                          links: [],
+                        };
+
+                  localFilePath = downloaded.filePath;
+                  cleanupWorkDir = workDir;
+
+                  const completed: CompletedUploadRecord = {
+                    filename: downloaded.filename,
+                    fileSize: downloaded.fileSize,
+                    uploadResult,
+                    expiresAtMs: Date.now() + cacheTtlMs,
+                  };
+                  setCachedDownload(cacheKey, completed);
+                  return completed;
+                } catch (err) {
+                  await rm(workDir, { recursive: true, force: true });
+                  throw err;
+                } finally {
+                  if (tempCookiePath) {
+                    await rm(tempCookiePath, { force: true });
+                  }
+                }
+              });
+
+              inFlightDownloads.set(cacheKey, sharedPromise);
+              try {
+                record = await sharedPromise;
+              } finally {
+                inFlightDownloads.delete(cacheKey);
               }
             }
+          }
 
-            deps.logger?.info(
-              `[yt-dlp] Downloading ${url} (cookies=${tempCookiePath ? "yes" : "no"})`,
-            );
-            const downloaded = await deps.downloader.download(
-              url,
-              workDir,
-              tempCookiePath ? { cookiesFile: tempCookiePath } : undefined,
-            );
-            const objectKey = buildObjectKey(downloaded.filename);
-            deps.logger?.info(
-              `[Archive] Uploading ${downloaded.filename} (${downloaded.fileSize} bytes) -> ${objectKey}`,
-            );
-            const uploadResult: {
-              primaryUrl: string;
-              links: Array<{ label: string; url: string }>;
-              preferLocalFile?: boolean;
-            } = deps.archive.uploadAll
-              ? await deps.archive.uploadAll(downloaded.filePath, objectKey)
-              : {
-                  primaryUrl: await deps.archive.upload(
-                    downloaded.filePath,
-                    objectKey,
-                  ),
-                  links: [],
-                };
-
+          try {
+            const { uploadResult, filename, fileSize } = record;
             const replyText =
               uploadResult.links.length > 1
                 ? uploadResult.links
@@ -240,11 +346,17 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
                     .join("\n")
                 : uploadResult.links[0]?.url ?? uploadResult.primaryUrl;
 
-            const effectiveMediaBytes = uploadResult.preferLocalFile
-              ? Math.ceil((downloaded.fileSize * 4) / 3) + 1024
-              : downloaded.fileSize;
+            const canUseLocalFile = Boolean(
+              uploadResult.preferLocalFile && localFilePath,
+            );
+            const effectiveMediaBytes = canUseLocalFile
+              ? Math.ceil((fileSize * 4) / 3) + 1024
+              : fileSize;
 
-            if (effectiveMediaBytes <= deps.maxWhatsappMediaBytes) {
+            if (
+              effectiveMediaBytes <= deps.maxWhatsappMediaBytes &&
+              (!uploadResult.preferLocalFile || canUseLocalFile)
+            ) {
               deps.logger?.info(
                 `[WAHA] Replying video to ${chatId} (msg=${payload.id})`,
               );
@@ -252,11 +364,11 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
                 await deps.waha.sendVideo({
                   chatId,
                   videoUrl: uploadResult.primaryUrl,
-                  filename: downloaded.filename,
+                  filename,
                   caption: replyText,
                   replyTo: payload.id,
-                  ...(uploadResult.preferLocalFile
-                    ? { filePath: downloaded.filePath }
+                  ...(canUseLocalFile && localFilePath
+                    ? { filePath: localFilePath }
                     : {}),
                 });
               } catch (sendErr) {
@@ -274,7 +386,7 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
               }
             } else {
               deps.logger?.info(
-                `[WAHA] Video exceeds limit (${downloaded.fileSize} bytes), replying link to ${chatId} (msg=${payload.id})`,
+                `[WAHA] Video exceeds limit (${fileSize} bytes), replying link to ${chatId} (msg=${payload.id})`,
               );
               await deps.waha.sendText({
                 chatId,
@@ -283,35 +395,32 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
               });
             }
             deps.logger?.info(`[WAHA] Done ${url} -> ${uploadResult.primaryUrl}`);
-          } catch (error) {
-            const rawReason =
-              error instanceof Error ? error.message : "Unknown error occurred";
-            const reason = formatUserError(error);
-            deps.logger?.error(`[WAHA] Failed ${url}: ${rawReason}`, error);
-            const prefix =
-              urls.length > 1 ? `Download failed (${url})` : "Download failed";
-            try {
-              await deps.waha.sendText({
-                chatId,
-                text: `${prefix}: ${reason}`,
-                replyTo: payload.id,
-              });
-            } catch (notifyErr) {
-              deps.logger?.error(
-                `[WAHA] Failed to send error reply for ${url}`,
-                notifyErr,
-              );
-            }
           } finally {
-            await Promise.all([
-              rm(workDir, { recursive: true, force: true }),
-              tempCookiePath
-                ? rm(tempCookiePath, { force: true })
-                : Promise.resolve(),
-            ]);
+            if (cleanupWorkDir) {
+              await rm(cleanupWorkDir, { recursive: true, force: true });
+            }
           }
-        }),
-      ),
+        } catch (error) {
+          const rawReason =
+            error instanceof Error ? error.message : "Unknown error occurred";
+          const reason = formatUserError(error);
+          deps.logger?.error(`[WAHA] Failed ${url}: ${rawReason}`, error);
+          const prefix =
+            urls.length > 1 ? `Download failed (${url})` : "Download failed";
+          try {
+            await deps.waha.sendText({
+              chatId,
+              text: `${prefix}: ${reason}`,
+              replyTo: payload.id,
+            });
+          } catch (notifyErr) {
+            deps.logger?.error(
+              `[WAHA] Failed to send error reply for ${url}`,
+              notifyErr,
+            );
+          }
+        }
+      }),
     );
   };
 }

@@ -1667,4 +1667,144 @@ describe("createMessageHandler", () => {
       "Download failed: Akses video ditolak oleh server sumber (403). Coba pakai /cookies <domain>.",
     ]);
   });
+
+  test("deduplicates identical payload.id, coalesces in-flight URLs, and serves completed cache hits while isolating cookie profiles", async () => {
+    const rootTmp = await makeTempRoot();
+    const cookiesDir = await makeTempRoot();
+    let downloadCount = 0;
+    const sentVideos: Array<{ chatId: string; replyTo: string; videoUrl: string }> = [];
+
+    let releaseFirstDownload!: () => void;
+    const firstDownloadGate = new Promise<void>((resolve) => {
+      releaseFirstDownload = resolve;
+    });
+
+    const waha: WahaClientPort = {
+      async sendReaction() {},
+      async sendVideo(params) {
+        sentVideos.push({
+          chatId: params.chatId,
+          replyTo: params.replyTo,
+          videoUrl: params.videoUrl,
+        });
+      },
+      async sendText() {},
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    const downloader: DownloaderPort = {
+      async download(url, outputDir, options) {
+        downloadCount += 1;
+        const n = downloadCount;
+        if (n === 1) {
+          await firstDownloadGate;
+        }
+        const filePath = join(outputDir, `v${n}.mp4`);
+        await Bun.write(filePath, new Uint8Array(64));
+        return {
+          filePath,
+          fileSize: 64,
+          filename: options?.cookiesFile ? `priv-${n}.mp4` : `pub-${n}.mp4`,
+        };
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload(_filePath, objectKey) {
+        return `https://cdn.example.com/${objectKey}`;
+      },
+    };
+
+    // Save a cookie profile for 628999 on example.com
+    const userCookieDir = join(cookiesDir, "628999");
+    await mkdir(userCookieDir, { recursive: true });
+    await Bun.write(join(userCookieDir, "example.com.txt"), "# Netscape HTTP Cookie File\n");
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      downloadConcurrency: 2,
+      downloadCacheTtlMs: 60_000,
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+      cookiesDir,
+    });
+
+    // 1. Two concurrent requests for the same public URL -> coalesced into 1 download
+    const p1 = handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "dup-msg-1",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/shared",
+        source: "app",
+      },
+    });
+    // Duplicate payload.id replay -> silently ignored
+    const p1Replay = handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "dup-msg-1",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/shared",
+        source: "app",
+      },
+    });
+    const p2 = handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "dup-msg-2",
+        from: "628222@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/shared",
+        source: "app",
+      },
+    });
+
+    await new Promise((r) => setTimeout(r, 20));
+    releaseFirstDownload();
+    await Promise.all([p1, p1Replay, p2]);
+
+    expect(downloadCount).toBe(1);
+    expect(sentVideos.length).toBe(2);
+    expect(sentVideos[0]!.videoUrl).toBe(sentVideos[1]!.videoUrl);
+
+    // 2. Subsequent request for the same public URL -> served from completed cache
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "cache-hit-msg",
+        from: "628333@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/shared",
+        source: "app",
+      },
+    });
+    expect(downloadCount).toBe(1);
+    expect(sentVideos.length).toBe(3);
+
+    // 3. Request from 628999 who HAS cookies for example.com -> NOT served from public cache
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "priv-msg",
+        from: "628999@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/shared",
+        source: "app",
+      },
+    });
+    expect(downloadCount).toBe(2);
+    expect(sentVideos.length).toBe(4);
+  });
 });

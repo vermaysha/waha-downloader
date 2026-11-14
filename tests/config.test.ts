@@ -15,6 +15,7 @@ describe("loadConfig", () => {
       R2_PRESIGN_TTL_SECONDS: "7200",
       DOWNLOAD_CONCURRENCY: "3",
       DOWNLOAD_TIMEOUT_SECONDS: "900",
+      DOWNLOAD_CACHE_TTL_SECONDS: "1800",
       MAX_WHATSAPP_MEDIA_BYTES: "16777216",
       TMP_DIR: "/tmp/waha-dl-test",
       COOKIES_DIR: "/var/lib/waha-dl/cookies",
@@ -39,6 +40,7 @@ describe("loadConfig", () => {
       tempUploadUrl: "https://temp.sh/upload",
       downloadConcurrency: 3,
       downloadTimeoutMs: 900000,
+      downloadCacheTtlMs: 1800000,
       maxWhatsappMediaBytes: 16777216,
       tmpDir: "/tmp/waha-dl-test",
       cookiesDir: "/var/lib/waha-dl/cookies",
@@ -63,6 +65,7 @@ describe("loadConfig", () => {
     expect(config.gdrive).toBeUndefined();
     expect(config.downloadConcurrency).toBe(2);
     expect(config.downloadTimeoutMs).toBe(300000);
+    expect(config.downloadCacheTtlMs).toBe(3540000);
     expect(config.maxWhatsappMediaBytes).toBe(50 * 1024 * 1024);
     expect(config.tmpDir).toBe("tmp");
     expect(config.cookiesDir).toBe("./cookies");

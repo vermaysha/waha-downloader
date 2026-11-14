@@ -335,4 +335,56 @@ describe("archive adapters", () => {
     expect(tokenRequestBody).toContain("assertion=");
     expect(permissionCalled).toBe(false);
   });
+
+  test("TempShArchive splits files exceeding splitThresholdBytes and preserves all part links in CompositeArchive", async () => {
+    const filePath = await makeTempFile("big.mp4", "0123456789abcdef"); // 16 bytes
+    const uploadedNames: string[] = [];
+
+    const tempArchive = new TempShArchive({
+      splitThresholdBytes: 10,
+      splitFn: async (_src, _targetBytes, splitDir) => {
+        const p1 = join(splitDir, "big.part000.mp4");
+        const p2 = join(splitDir, "big.part001.mp4");
+        await Bun.write(p1, "01234567");
+        await Bun.write(p2, "89abcdef");
+        return [p1, p2];
+      },
+      fetchFn: async (_input, init) => {
+        const body = await new Response(init?.body).text();
+        const match = body.match(/filename="([^"]+)"/);
+        const name = match?.[1] ?? "unknown";
+        uploadedNames.push(name);
+        return new Response(`https://temp.sh/u/${name}\n`, { status: 200 });
+      },
+    });
+
+    const tempRes = await tempArchive.uploadAll(filePath, "downloads/big.mp4");
+    expect(uploadedNames).toEqual(["big.part000.mp4", "big.part001.mp4"]);
+    expect(tempRes).toEqual({
+      primaryUrl: "https://temp.sh/u/big.part000.mp4",
+      links: [
+        { label: "Temp (1/2)", url: "https://temp.sh/u/big.part000.mp4" },
+        { label: "Temp (2/2)", url: "https://temp.sh/u/big.part001.mp4" },
+      ],
+    });
+
+    const composite = new CompositeArchive([
+      { label: "Temp", archive: tempArchive },
+      {
+        label: "GDrive",
+        archive: {
+          async upload() {
+            return "https://drive.google.com/file/d/big-1/view";
+          },
+        },
+      },
+    ]);
+
+    const compRes = await composite.uploadAll(filePath, "downloads/big.mp4");
+    expect(compRes.links).toEqual([
+      { label: "Temp (1/2)", url: "https://temp.sh/u/big.part000.mp4" },
+      { label: "Temp (2/2)", url: "https://temp.sh/u/big.part001.mp4" },
+      { label: "GDrive", url: "https://drive.google.com/file/d/big-1/view" },
+    ]);
+  });
 });
