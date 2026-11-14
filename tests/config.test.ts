@@ -62,7 +62,7 @@ describe("loadConfig", () => {
     expect(config.r2?.presignTtlSeconds).toBe(3600);
     expect(config.gdrive).toBeUndefined();
     expect(config.downloadConcurrency).toBe(2);
-    expect(config.downloadTimeoutMs).toBe(1800000);
+    expect(config.downloadTimeoutMs).toBe(300000);
     expect(config.maxWhatsappMediaBytes).toBe(50 * 1024 * 1024);
     expect(config.tmpDir).toBe("tmp");
     expect(config.cookiesDir).toBe("./cookies");

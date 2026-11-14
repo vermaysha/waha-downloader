@@ -283,7 +283,7 @@ export function loadConfig(
     downloadTimeoutMs:
       parsePositiveInt(
         env.DOWNLOAD_TIMEOUT_SECONDS,
-        1800,
+        300,
         "DOWNLOAD_TIMEOUT_SECONDS",
       ) * 1000,
     maxWhatsappMediaBytes: parsePositiveInt(

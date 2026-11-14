@@ -20,6 +20,7 @@ export function buildYtDlpArgs(
     "mp4",
     "-f",
     "bv*+ba/b",
+    "--newline",
     "--socket-timeout",
     "30",
     "-o",
@@ -32,33 +33,116 @@ export function buildYtDlpArgs(
   return args;
 }
 
+const MAX_STDERR_TAIL_BYTES = 16 * 1024;
+
+export type DownloadCommandFactory = (
+  url: string,
+  outputDir: string,
+  options?: DownloadOptions,
+) => string[];
+
 /**
  * Downloads media using `yt-dlp` via `Bun.spawn` into a temporary output directory.
+ * Uses an inactivity (idle) timeout that resets whenever stdout or stderr emits output.
  */
 export class YtDlpDownloader implements DownloaderPort {
-  constructor(private readonly timeoutMs = 30 * 60 * 1000) {}
+  constructor(
+    private readonly idleTimeoutMs = 5 * 60 * 1000,
+    private readonly commandFactory: DownloadCommandFactory = buildYtDlpArgs,
+  ) {}
 
   async download(
     url: string,
     outputDir: string,
     options?: DownloadOptions,
   ): Promise<DownloadedMedia> {
-    const proc = Bun.spawn(buildYtDlpArgs(url, outputDir, options), {
+    const proc = Bun.spawn(this.commandFactory(url, outputDir, options), {
       stdout: "pipe",
       stderr: "pipe",
-      timeout: this.timeoutMs,
     });
 
-    const [exitCode, stderrText] = await Promise.all([
-      proc.exited,
-      new Response(proc.stderr).text(),
-    ]);
+    let timedOut = false;
+    let idleTimer: ReturnType<typeof setTimeout> | undefined;
+    let killTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const resetIdleTimer = () => {
+      if (idleTimer) {
+        clearTimeout(idleTimer);
+      }
+      idleTimer = setTimeout(() => {
+        timedOut = true;
+        proc.kill("SIGTERM");
+        killTimer = setTimeout(() => {
+          try {
+            proc.kill("SIGKILL");
+          } catch {
+            // Process may have already exited.
+          }
+        }, 5_000);
+      }, this.idleTimeoutMs);
+    };
+
+    const drainStream = async (
+      stream: ReadableStream<Uint8Array> | number | undefined,
+      collectTail: boolean,
+    ): Promise<string> => {
+      if (!stream || typeof stream === "number") {
+        return "";
+      }
+      const reader = stream.getReader();
+      const decoder = new TextDecoder();
+      let tail = "";
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          if (value && value.byteLength > 0) {
+            resetIdleTimer();
+            if (collectTail) {
+              tail += decoder.decode(value, { stream: true });
+              if (tail.length > MAX_STDERR_TAIL_BYTES) {
+                tail = tail.slice(-MAX_STDERR_TAIL_BYTES);
+              }
+            }
+          }
+        }
+        if (collectTail) {
+          tail += decoder.decode();
+        }
+      } finally {
+        reader.releaseLock();
+      }
+      return tail;
+    };
+
+    resetIdleTimer();
+    let exitCode: number;
+    let stderrText = "";
+
+    try {
+      const [code, , stderrTail] = await Promise.all([
+        proc.exited,
+        drainStream(proc.stdout, false),
+        drainStream(proc.stderr, true),
+      ]);
+      exitCode = code;
+      stderrText = stderrTail;
+    } finally {
+      if (idleTimer) clearTimeout(idleTimer);
+      if (killTimer) clearTimeout(killTimer);
+    }
+
+    if (timedOut) {
+      const idleSeconds = Math.max(1, Math.round(this.idleTimeoutMs / 1000));
+      throw new Error(
+        `Download macet (tidak ada progres selama ${idleSeconds} detik).`,
+      );
+    }
 
     if (exitCode !== 0) {
       if (exitCode === 143) {
-        const minutes = Math.max(1, Math.round(this.timeoutMs / 60_000));
         throw new Error(
-          `Download melebihi batas waktu (${minutes} menit). Coba lagi atau naikkan DOWNLOAD_TIMEOUT_SECONDS.`,
+          "Download dihentikan sebelum selesai (SIGTERM / exit code 143).",
         );
       }
       const detail = stderrText.trim().split("\n").pop() || `exit code ${exitCode}`;
