@@ -321,30 +321,46 @@ export class CompositeArchive implements MediaArchivePort {
     }> = [];
 
     for (const { label, archive } of this.targets) {
-      if (archive.uploadAll) {
-        const res = await archive.uploadAll(filePath, objectKey);
-        results.push({
-          primaryUrl: res.primaryUrl,
-          links:
-            res.links.length > 1
-              ? res.links
-              : [{ label, url: res.links[0]?.url ?? res.primaryUrl }],
-          preferLocalFile: Boolean(res.preferLocalFile),
-        });
-      } else {
-        const url = await archive.upload(filePath, objectKey);
-        results.push({
-          primaryUrl: url,
-          links: [{ label, url }],
-          preferLocalFile: false,
-        });
+      try {
+        if (archive.uploadAll) {
+          const res = await archive.uploadAll(filePath, objectKey);
+          results.push({
+            primaryUrl: res.primaryUrl,
+            links:
+              res.links.length > 1
+                ? res.links
+                : [{ label, url: res.links[0]?.url ?? res.primaryUrl }],
+            preferLocalFile: Boolean(res.preferLocalFile),
+          });
+        } else {
+          const url = await archive.upload(filePath, objectKey);
+          results.push({
+            primaryUrl: url,
+            links: [{ label, url }],
+            preferLocalFile: false,
+          });
+        }
+      } catch (err) {
+        // When multiple targets are active and temp.sh fails (e.g. insufficient disk for >4GB split),
+        // preserve the other uploaded targets instead of discarding the whole job.
+        if (this.targets.length > 1 && label === "Temp") {
+          const reason = err instanceof Error ? err.message : String(err);
+          results.push({
+            primaryUrl: "",
+            links: [{ label, url: `dilewati (${reason})` }],
+            preferLocalFile: false,
+          });
+          continue;
+        }
+        throw err;
       }
     }
 
+    const firstValid = results.find((r) => r.primaryUrl !== "") ?? results[0]!;
     return {
-      primaryUrl: results[0]!.primaryUrl,
+      primaryUrl: firstValid.primaryUrl,
       links: results.flatMap((r) => r.links),
-      preferLocalFile: results[0]!.preferLocalFile,
+      preferLocalFile: firstValid.preferLocalFile,
     };
   }
 }
@@ -601,8 +617,14 @@ export class GoogleDriveArchive implements MediaArchivePort {
  * Builds the configured MediaArchivePort based on `config.uploadTargets`.
  */
 export function createArchive(config: AppConfig): MediaArchivePort {
-  const entries: CompositeArchiveTarget[] = config.uploadTargets.map(
-    (target) => {
+  // Always run persistent targets (s3, gdrive) before temp.sh so temp.sh split/limit issues
+  // never block primary uploads.
+  const orderedTargets = [
+    ...config.uploadTargets.filter((t) => t !== "temp"),
+    ...config.uploadTargets.filter((t) => t === "temp"),
+  ];
+
+  const entries: CompositeArchiveTarget[] = orderedTargets.map((target) => {
       if (target === "temp") {
         return {
           label: "Temp",
@@ -632,8 +654,7 @@ export function createArchive(config: AppConfig): MediaArchivePort {
         label: "GDrive",
         archive: new GoogleDriveArchive(config.gdrive),
       };
-    },
-  );
+  });
 
   if (entries.length === 1) {
     return entries[0]!.archive;

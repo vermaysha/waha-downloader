@@ -419,5 +419,29 @@ describe("archive adapters", () => {
       tempArchive.uploadAll(filePath, "downloads/big.mp4"),
     ).rejects.toThrow(/Ruang disk tidak cukup/);
     expect(splitCalled).toBe(false);
+
+    const composite = new CompositeArchive([
+      {
+        label: "GDrive",
+        archive: {
+          async upload() {
+            return "https://drive.google.com/file/d/ok-1/view";
+          },
+        },
+      },
+      { label: "Temp", archive: tempArchive },
+    ]);
+
+    const compositeRes = await composite.uploadAll(filePath, "downloads/big.mp4");
+    expect(compositeRes.primaryUrl).toBe(
+      "https://drive.google.com/file/d/ok-1/view",
+    );
+    expect(compositeRes.links).toEqual([
+      { label: "GDrive", url: "https://drive.google.com/file/d/ok-1/view" },
+      {
+        label: "Temp",
+        url: expect.stringContaining("dilewati (Ruang disk tidak cukup"),
+      },
+    ]);
   });
 });
