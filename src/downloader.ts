@@ -34,7 +34,7 @@ export function buildYtDlpArgs(
  * Downloads media using `yt-dlp` via `Bun.spawn` into a temporary output directory.
  */
 export class YtDlpDownloader implements DownloaderPort {
-  constructor(private readonly timeoutMs = 5 * 60 * 1000) {}
+  constructor(private readonly timeoutMs = 30 * 60 * 1000) {}
 
   async download(
     url: string,

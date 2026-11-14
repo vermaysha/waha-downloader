@@ -41,6 +41,7 @@ export interface AppConfig {
   gdrive?: GoogleDriveConfig;
   tempUploadUrl: string;
   downloadConcurrency: number;
+  downloadTimeoutMs: number;
   maxWhatsappMediaBytes: number;
   tmpDir: string;
   cookiesDir: string;
@@ -279,6 +280,12 @@ export function loadConfig(
       2,
       "DOWNLOAD_CONCURRENCY",
     ),
+    downloadTimeoutMs:
+      parsePositiveInt(
+        env.DOWNLOAD_TIMEOUT_SECONDS,
+        1800,
+        "DOWNLOAD_TIMEOUT_SECONDS",
+      ) * 1000,
     maxWhatsappMediaBytes: parsePositiveInt(
       env.MAX_WHATSAPP_MEDIA_BYTES,
       50 * 1024 * 1024,

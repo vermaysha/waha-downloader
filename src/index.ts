@@ -7,7 +7,7 @@ import { WahaClient, connectWahaWebSocket } from "./waha";
 async function main(): Promise<void> {
   const config = loadConfig();
   const waha = new WahaClient(config.waha);
-  const downloader = new YtDlpDownloader();
+  const downloader = new YtDlpDownloader(config.downloadTimeoutMs);
   const archive = createArchive(config);
 
   await waha.ensureSessionStarted();
