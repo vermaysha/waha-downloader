@@ -96,7 +96,7 @@ See [.env.example](.env.example) for the full list:
    WorkingDirectory=/path/to/waha-downloader
    EnvironmentFile=/path/to/waha-downloader/.env
    Environment=PATH=%h/.bun/bin:/usr/local/bin:/usr/bin:/bin
-   ExecStart=%h/.bun/bin/bun run src/index.ts
+   ExecStart=%h/.bun/bin/bun --smol run src/index.ts
    Restart=always
    RestartSec=5
 

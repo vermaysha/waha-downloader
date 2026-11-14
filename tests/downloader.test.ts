@@ -39,6 +39,7 @@ describe("buildYtDlpArgs", () => {
     expect(formatIdx).toBeGreaterThan(-1);
     expect(args[formatIdx + 1]).toBe("bv*+ba/b");
     expect(args).toContain("--newline");
+    expect(args).toContain("--no-cache-dir");
   });
 });
 

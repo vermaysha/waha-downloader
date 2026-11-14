@@ -340,25 +340,39 @@ describe("archive adapters", () => {
     const filePath = await makeTempFile("big.mp4", "0123456789abcdef"); // 16 bytes
     const uploadedNames: string[] = [];
 
+    let splitDirSeen = "";
+    let part1DeletedBeforePart2 = false;
+    let p1Path = "";
+
+    const customTmp = await mkdtemp(join(tmpdir(), "waha-dl-custom-tmp-"));
+    tempRoots.push(customTmp);
+
     const tempArchive = new TempShArchive({
+      tmpDir: customTmp,
       splitThresholdBytes: 10,
       splitFn: async (_src, _targetBytes, splitDir) => {
-        const p1 = join(splitDir, "big.part000.mp4");
+        splitDirSeen = splitDir;
+        p1Path = join(splitDir, "big.part000.mp4");
         const p2 = join(splitDir, "big.part001.mp4");
-        await Bun.write(p1, "01234567");
+        await Bun.write(p1Path, "01234567");
         await Bun.write(p2, "89abcdef");
-        return [p1, p2];
+        return [p1Path, p2];
       },
       fetchFn: async (_input, init) => {
         const body = await new Response(init?.body).text();
         const match = body.match(/filename="([^"]+)"/);
         const name = match?.[1] ?? "unknown";
+        if (name === "big.part001.mp4") {
+          part1DeletedBeforePart2 = !(await Bun.file(p1Path).exists());
+        }
         uploadedNames.push(name);
         return new Response(`https://temp.sh/u/${name}\n`, { status: 200 });
       },
     });
 
     const tempRes = await tempArchive.uploadAll(filePath, "downloads/big.mp4");
+    expect(splitDirSeen.startsWith(customTmp)).toBe(true);
+    expect(part1DeletedBeforePart2).toBe(true);
     expect(uploadedNames).toEqual(["big.part000.mp4", "big.part001.mp4"]);
     expect(tempRes).toEqual({
       primaryUrl: "https://temp.sh/u/big.part000.mp4",

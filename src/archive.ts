@@ -1,5 +1,5 @@
 import { createSign } from "node:crypto";
-import { mkdtemp, readdir, rm, statfs } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, rm, statfs } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, extname, join } from "node:path";
 import { S3Client } from "bun";
@@ -33,6 +33,7 @@ export class R2Archive implements MediaArchivePort {
   async upload(filePath: string, objectKey: string): Promise<string> {
     await this.client.write(objectKey, Bun.file(filePath), {
       type: "video/mp4",
+      queueSize: 1,
     });
 
     if (this.config.publicBaseUrl) {
@@ -142,6 +143,7 @@ function formatGiB(bytes: number): string {
 export interface TempShArchiveConfig {
   uploadUrl?: string;
   fetchFn?: FetchLike;
+  tmpDir?: string;
   splitThresholdBytes?: number;
   splitFn?: VideoSplitter;
   availableBytesFn?: AvailableBytesFn;
@@ -154,6 +156,7 @@ export interface TempShArchiveConfig {
 export class TempShArchive implements MediaArchivePort {
   private readonly uploadUrl: string;
   private readonly fetchFn: FetchLike;
+  private readonly tmpDir: string;
   private readonly splitThresholdBytes: number;
   private readonly splitFn: VideoSplitter;
   private readonly availableBytesFn: AvailableBytesFn;
@@ -161,6 +164,7 @@ export class TempShArchive implements MediaArchivePort {
   constructor(config: TempShArchiveConfig = {}) {
     this.uploadUrl = config.uploadUrl || "https://temp.sh/upload";
     this.fetchFn = config.fetchFn ?? fetch;
+    this.tmpDir = config.tmpDir || tmpdir();
     this.splitThresholdBytes =
       config.splitThresholdBytes ?? TEMP_SH_SPLIT_THRESHOLD_BYTES;
     this.splitFn = config.splitFn ?? splitVideoWithFfmpeg;
@@ -250,7 +254,8 @@ export class TempShArchive implements MediaArchivePort {
       };
     }
 
-    const splitDir = await mkdtemp(join(tmpdir(), "waha-dl-split-"));
+    await mkdir(this.tmpDir, { recursive: true });
+    const splitDir = await mkdtemp(join(this.tmpDir, "waha-dl-split-"));
     try {
       const requiredBytes = file.size + 64 * 1024 * 1024;
       const availableBytes = await this.availableBytesFn(splitDir);
@@ -268,6 +273,7 @@ export class TempShArchive implements MediaArchivePort {
       const urls: string[] = [];
       for (const partPath of partPaths) {
         urls.push(await this.uploadSingleFile(partPath));
+        await rm(partPath, { force: true });
       }
       return {
         primaryUrl: urls[0]!,
@@ -600,7 +606,10 @@ export function createArchive(config: AppConfig): MediaArchivePort {
       if (target === "temp") {
         return {
           label: "Temp",
-          archive: new TempShArchive({ uploadUrl: config.tempUploadUrl }),
+          archive: new TempShArchive({
+            uploadUrl: config.tempUploadUrl,
+            tmpDir: config.tmpDir,
+          }),
         };
       }
       if (target === "s3") {

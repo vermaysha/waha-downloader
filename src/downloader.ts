@@ -16,6 +16,7 @@ export function buildYtDlpArgs(
   const args = [
     "yt-dlp",
     "--no-playlist",
+    "--no-cache-dir",
     "--merge-output-format",
     "mp4",
     "-f",
