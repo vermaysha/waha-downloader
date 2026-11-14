@@ -66,12 +66,41 @@ export class TempShArchive implements MediaArchivePort {
   }
 
   async upload(filePath: string, _objectKey: string): Promise<string> {
-    const formData = new FormData();
-    formData.append("file", Bun.file(filePath), basename(filePath));
+    const file = Bun.file(filePath);
+    const filename = basename(filePath).replace(/["\r\n]/g, "_");
+    const boundary = `----wahaDl${crypto.randomUUID().replace(/-/g, "")}`;
+    const encoder = new TextEncoder();
+    const header = encoder.encode(
+      `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="${filename}"\r\nContent-Type: application/octet-stream\r\n\r\n`,
+    );
+    const footer = encoder.encode(`\r\n--${boundary}--\r\n`);
+    const totalLength = header.byteLength + file.size + footer.byteLength;
+
+    const bodyStream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        try {
+          controller.enqueue(header);
+          const reader = file.stream().getReader();
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            controller.enqueue(value);
+          }
+          controller.enqueue(footer);
+          controller.close();
+        } catch (err) {
+          controller.error(err);
+        }
+      },
+    });
 
     const response = await this.fetchFn(this.uploadUrl, {
       method: "POST",
-      body: formData,
+      headers: {
+        "Content-Type": `multipart/form-data; boundary=${boundary}`,
+        "Content-Length": String(totalLength),
+      },
+      body: bodyStream,
     });
 
     if (!response.ok) {
@@ -282,28 +311,68 @@ export class GoogleDriveArchive implements MediaArchivePort {
       throw new Error("Google Drive upload init missing Location header");
     }
 
-    const uploadRes = await this.fetchFn(uploadUrl, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "video/mp4",
-        "Content-Length": String(file.size),
-      },
-      body: file,
-    });
+    const CHUNK_SIZE = 8 * 1024 * 1024; // 8 MiB (multiple of 256 KiB required by Drive API)
+    let uploaded:
+      | { id?: string; webViewLink?: string; webContentLink?: string }
+      | undefined;
 
-    if (!uploadRes.ok) {
-      const body = await uploadRes.text().catch(() => "");
-      throw new Error(
-        `Google Drive upload failed (${uploadRes.status}): ${body || uploadRes.statusText}`,
-      );
+    if (file.size === 0) {
+      const uploadRes = await this.fetchFn(uploadUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "video/mp4",
+          "Content-Length": "0",
+        },
+        body: new Uint8Array(0),
+      });
+      if (!uploadRes.ok) {
+        const body = await uploadRes.text().catch(() => "");
+        throw new Error(
+          `Google Drive upload failed (${uploadRes.status}): ${body || uploadRes.statusText}`,
+        );
+      }
+      uploaded = (await uploadRes.json()) as {
+        id?: string;
+        webViewLink?: string;
+        webContentLink?: string;
+      };
+    } else {
+      let offset = 0;
+      while (offset < file.size) {
+        const end = Math.min(offset + CHUNK_SIZE, file.size);
+        const chunk = file.slice(offset, end);
+        const uploadRes = await this.fetchFn(uploadUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "video/mp4",
+            "Content-Length": String(end - offset),
+            "Content-Range": `bytes ${offset}-${end - 1}/${file.size}`,
+          },
+          body: chunk,
+        });
+
+        if (uploadRes.status === 308) {
+          offset = end;
+          continue;
+        }
+
+        if (!uploadRes.ok) {
+          const body = await uploadRes.text().catch(() => "");
+          throw new Error(
+            `Google Drive upload failed (${uploadRes.status}): ${body || uploadRes.statusText}`,
+          );
+        }
+
+        uploaded = (await uploadRes.json()) as {
+          id?: string;
+          webViewLink?: string;
+          webContentLink?: string;
+        };
+        break;
+      }
     }
 
-    const uploaded = (await uploadRes.json()) as {
-      id?: string;
-      webViewLink?: string;
-      webContentLink?: string;
-    };
-    if (!uploaded.id) {
+    if (!uploaded?.id) {
       throw new Error("Google Drive upload response missing file id");
     }
 
