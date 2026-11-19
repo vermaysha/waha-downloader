@@ -46,6 +46,7 @@ export interface AppConfig {
   maxWhatsappMediaBytes: number;
   tmpDir: string;
   cookiesDir: string;
+  autoDownloadFile: string;
 }
 
 function parseUploadTargets(value: string | undefined): UploadTarget[] {
@@ -311,5 +312,6 @@ export function loadConfig(
     ),
     tmpDir: env.TMP_DIR?.trim() || "tmp",
     cookiesDir: env.COOKIES_DIR?.trim() || "./cookies",
+    autoDownloadFile: env.AUTODL_FILE?.trim() || "./data/autodownload.json",
   };
 }

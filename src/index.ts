@@ -1,4 +1,5 @@
 import { createArchive } from "./archive";
+import { createAutoDownloadStore } from "./autodownload";
 import { cleanupTempStorage } from "./cleanup";
 import { loadConfig } from "./config";
 import { YtDlpDownloader } from "./downloader";
@@ -11,6 +12,7 @@ async function main(): Promise<void> {
   const waha = new WahaClient(config.waha);
   const downloader = new YtDlpDownloader(config.downloadTimeoutMs);
   const archive = createArchive(config);
+  const autoDownloadStore = createAutoDownloadStore(config.autoDownloadFile);
 
   await waha.ensureSessionStarted();
   console.log(`WAHA session "${config.waha.session}" is ready.`);
@@ -24,6 +26,7 @@ async function main(): Promise<void> {
     maxWhatsappMediaBytes: config.maxWhatsappMediaBytes,
     tmpDir: config.tmpDir,
     cookiesDir: config.cookiesDir,
+    autoDownloadStore,
     logger: console,
   });
 

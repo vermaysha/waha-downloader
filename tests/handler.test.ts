@@ -2,7 +2,8 @@ import { afterEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createMessageHandler } from "../src/handler";
+import { createAutoDownloadStore } from "../src/autodownload";
+import { createMessageHandler, extractUrlsFromText } from "../src/handler";
 import type {
   DownloaderPort,
   MediaArchivePort,
@@ -1384,6 +1385,7 @@ describe("createMessageHandler", () => {
     for (const reply of textReplies) {
       expect(reply.chatId).toBe("628123@c.us");
       expect(reply.text).toContain("/dl");
+      expect(reply.text).toContain("/autodl");
       expect(reply.text).toContain("/cookies");
       expect(reply.text).toContain("/help");
     }
@@ -1806,5 +1808,235 @@ describe("createMessageHandler", () => {
     });
     expect(downloadCount).toBe(2);
     expect(sentVideos.length).toBe(4);
+  });
+
+  test("extractUrlsFromText extracts and cleans URLs from various text patterns", () => {
+    expect(extractUrlsFromText("")).toEqual([]);
+    expect(extractUrlsFromText("hello world without url")).toEqual([]);
+    expect(extractUrlsFromText("https://example.com/video.mp4")).toEqual([
+      "https://example.com/video.mp4",
+    ]);
+    expect(
+      extractUrlsFromText(
+        "Lihat video ini https://example.com/1 dan https://example.com/2 keren!",
+      ),
+    ).toEqual(["https://example.com/1", "https://example.com/2"]);
+    expect(
+      extractUrlsFromText("Tonton di (https://example.com/paren) ya."),
+    ).toEqual(["https://example.com/paren"]);
+    expect(
+      extractUrlsFromText("https://en.wikipedia.org/wiki/File_(1999).mp4"),
+    ).toEqual(["https://en.wikipedia.org/wiki/File_(1999).mp4"]);
+    expect(
+      extractUrlsFromText("https://example.com/video?foo=bar&baz=1#section"),
+    ).toEqual(["https://example.com/video?foo=bar&baz=1#section"]);
+    expect(
+      extractUrlsFromText(
+        "https://example.com/dup\nhttps://example.com/dup\nhttps://example.com/unique",
+      ),
+    ).toEqual(["https://example.com/dup", "https://example.com/unique"]);
+  });
+
+  test("auto-download: downloads link directly without /dl when enabled for Requester", async () => {
+    const rootTmp = await makeTempRoot();
+    const calls: string[] = [];
+
+    const waha: WahaClientPort = {
+      async sendReaction(messageId, emoji) {
+        calls.push(`react:${messageId}:${emoji}`);
+      },
+      async sendVideo(params) {
+        calls.push(`sendVideo:${params.chatId}:${params.replyTo}:${params.videoUrl}`);
+      },
+      async sendText(params) {
+        calls.push(`sendText:${params.chatId}:${params.replyTo}:${params.text}`);
+      },
+      async downloadMedia() {
+        return "";
+      },
+    };
+
+    const downloader: DownloaderPort = {
+      async download(url, outputDir) {
+        calls.push(`download:${url}`);
+        const filePath = join(outputDir, "video.mp4");
+        await Bun.write(filePath, new Uint8Array(1024));
+        return { filePath, fileSize: 1024, filename: "video.mp4" };
+      },
+    };
+
+    const archive: MediaArchivePort = {
+      async upload(filePath, objectKey) {
+        calls.push(`upload:${objectKey}`);
+        return `https://cdn.example.com/${objectKey}`;
+      },
+    };
+
+    const store = createAutoDownloadStore(join(rootTmp, "autodl.json"));
+
+    const handle = createMessageHandler({
+      waha,
+      downloader,
+      archive,
+      autoDownloadStore: store,
+      maxWhatsappMediaBytes: 50 * 1024 * 1024,
+      tmpDir: rootTmp,
+    });
+
+    // 1. Initially disabled: message with URL is ignored
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-no-autodl",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "https://example.com/video1.mp4",
+        source: "app",
+      },
+    });
+    expect(calls).toEqual([]);
+
+    // 2. Enable auto download via /autodl on
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-enable-autodl",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "/autodl on",
+        source: "app",
+      },
+    });
+    expect(calls).toEqual([
+      `sendText:628111@c.us:msg-enable-autodl:Auto download berhasil DIAKTIFKAN untuk nomor ini.\nSekarang Anda cukup mengirim link video langsung tanpa perlu mengetik /dl.\n\nKetik /autodl off untuk menonaktifkan.`,
+    ]);
+    calls.length = 0;
+
+    // 3. Now sending a direct link triggers auto download
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-direct-link",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "https://example.com/video1.mp4",
+        source: "app",
+      },
+    });
+    expect(calls[0]).toBe("react:msg-direct-link:⏳");
+    expect(calls[1]).toBe("download:https://example.com/video1.mp4");
+    expect(calls[2]).toContain("upload:downloads/");
+    expect(calls[3]).toContain("sendVideo:628111@c.us:msg-direct-link:");
+    calls.length = 0;
+
+    // 4. Message with link in sentence triggers auto download
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-sentence-link",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "Coba tonton ini https://example.com/video2.mp4 keren banget!",
+        source: "app",
+      },
+    });
+    expect(calls[0]).toBe("react:msg-sentence-link:⏳");
+    expect(calls[1]).toBe("download:https://example.com/video2.mp4");
+    calls.length = 0;
+
+    // 5. Normal text without URL is ignored (no reactions, no downloads)
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-chat",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "Halo bot, selamat pagi!",
+        source: "app",
+      },
+    });
+    expect(calls).toEqual([]);
+
+    // 6. Another user in a group chat who has NOT enabled auto download is ignored,
+    // while the enabled user DOES trigger download
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-group-unenabled",
+        from: "1203630@g.us",
+        participant: "628222@c.us",
+        fromMe: false,
+        body: "https://example.com/group-ignored.mp4",
+        source: "app",
+      },
+    });
+    expect(calls).toEqual([]);
+
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-group-enabled",
+        from: "1203630@g.us",
+        participant: "628111@c.us",
+        fromMe: false,
+        body: "https://example.com/group-active.mp4",
+        source: "app",
+      },
+    });
+    expect(calls[0]).toBe("react:msg-group-enabled:⏳");
+    expect(calls[1]).toBe("download:https://example.com/group-active.mp4");
+    expect(calls[3]).toContain("sendVideo:1203630@g.us:msg-group-enabled:");
+    calls.length = 0;
+
+    // 7. Disable auto download via /autodl off
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-disable-autodl",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "/autodl off",
+        source: "app",
+      },
+    });
+    expect(calls[0]).toContain("DINONAKTIFKAN");
+    calls.length = 0;
+
+    // 8. Direct link is now ignored again
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-after-disable",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "https://example.com/video1.mp4",
+        source: "app",
+      },
+    });
+    expect(calls).toEqual([]);
+
+    // 9. /dl still works normally even when auto download is off
+    await handle({
+      event: "message.any",
+      session: "default",
+      payload: {
+        id: "msg-dl-command",
+        from: "628111@c.us",
+        fromMe: false,
+        body: "/dl https://example.com/video3.mp4",
+        source: "app",
+      },
+    });
+    expect(calls[0]).toBe("react:msg-dl-command:⏳");
+    expect(calls[1]).toBe("download:https://example.com/video3.mp4");
   });
 });

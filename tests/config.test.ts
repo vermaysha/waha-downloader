@@ -19,6 +19,7 @@ describe("loadConfig", () => {
       MAX_WHATSAPP_MEDIA_BYTES: "16777216",
       TMP_DIR: "/tmp/waha-dl-test",
       COOKIES_DIR: "/var/lib/waha-dl/cookies",
+      AUTODL_FILE: "/var/lib/waha-dl/autodl.json",
     });
 
     expect(config).toEqual({
@@ -44,6 +45,7 @@ describe("loadConfig", () => {
       maxWhatsappMediaBytes: 16777216,
       tmpDir: "/tmp/waha-dl-test",
       cookiesDir: "/var/lib/waha-dl/cookies",
+      autoDownloadFile: "/var/lib/waha-dl/autodl.json",
     });
   });
 
@@ -69,6 +71,7 @@ describe("loadConfig", () => {
     expect(config.maxWhatsappMediaBytes).toBe(50 * 1024 * 1024);
     expect(config.tmpDir).toBe("tmp");
     expect(config.cookiesDir).toBe("./cookies");
+    expect(config.autoDownloadFile).toBe("./data/autodownload.json");
 
     expect(() => loadConfig({})).toThrow(/WAHA_BASE_URL/);
   });

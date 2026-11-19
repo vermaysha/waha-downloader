@@ -1,5 +1,7 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
+import { type AutoDownloadStore } from "./autodownload";
+import { handleAutoDownloadCommand } from "./autodownload-command";
 import {
   createCookieStore,
   createTempCookieCopy,
@@ -24,6 +26,7 @@ export interface MessageHandlerDeps {
   maxWhatsappMediaBytes: number;
   tmpDir: string;
   cookiesDir?: string;
+  autoDownloadStore?: AutoDownloadStore;
   logger?: Logger;
 }
 
@@ -33,7 +36,7 @@ function extractCommandText(event: WahaMessageEvent): string {
   );
 }
 
-function isValidHttpUrl(token: string): boolean {
+export function isValidHttpUrl(token: string): boolean {
   try {
     const parsed = new URL(token);
     return parsed.protocol === "http:" || parsed.protocol === "https:";
@@ -42,7 +45,34 @@ function isValidHttpUrl(token: string): boolean {
   }
 }
 
-function parseDlUrls(text: string): string[] {
+export function extractUrlsFromText(text: string): string[] {
+  if (!text) return [];
+  const matches = text.match(/https?:\/\/[^\s<>"'`]+/gi) || [];
+  const urls: string[] = [];
+
+  for (const raw of matches) {
+    let cleaned = raw.replace(/[.,!?:;]+$/, "");
+    while (
+      cleaned.endsWith(")") &&
+      (cleaned.match(/\)/g)?.length ?? 0) > (cleaned.match(/\(/g)?.length ?? 0)
+    ) {
+      cleaned = cleaned.slice(0, -1);
+    }
+    while (
+      cleaned.endsWith("]") &&
+      (cleaned.match(/\]/g)?.length ?? 0) > (cleaned.match(/\[/g)?.length ?? 0)
+    ) {
+      cleaned = cleaned.slice(0, -1);
+    }
+    if (isValidHttpUrl(cleaned)) {
+      urls.push(cleaned);
+    }
+  }
+
+  return Array.from(new Set(urls));
+}
+
+export function parseDlUrls(text: string): string[] {
   const match = text.match(/^\/dl(?:\s+|$)(.*)/s);
   if (!match) {
     return [];
@@ -51,7 +81,7 @@ function parseDlUrls(text: string): string[] {
   if (!rest) {
     return [];
   }
-  return Array.from(new Set(rest.split(/\s+/).filter(isValidHttpUrl)));
+  return extractUrlsFromText(rest);
 }
 
 function buildObjectKey(filename: string): string {
@@ -103,6 +133,7 @@ const HELP_TEXT = [
   "WAHA Downloader Commands:",
   "",
   "• /dl <url1> [url2 ...] — Download video (supports multiple space/newline-separated URLs)",
+  "• /autodl [on|off|status] — Aktifkan/nonaktifkan auto download link tanpa /dl",
   "• /cookies <domain> — Save Netscape cookies (attach a .txt file or paste cookie lines below)",
   "• /cookies list — List your saved cookie domains",
   "• /cookies del <domain> — Delete saved cookies for a domain",
@@ -226,13 +257,43 @@ export function createMessageHandler(deps: MessageHandlerDeps) {
       return;
     }
 
-    const urls = parseDlUrls(text);
+    if (/^\/(?:autodl|autodownload)(?:\s|$)/i.test(text)) {
+      deps.logger?.info(
+        `[WAHA] Received /autodl command from ${chatId} (msg=${payload.id})`,
+      );
+      await markSeenBestEffort();
+      await handleAutoDownloadCommand(
+        { waha: deps.waha, autoDownloadStore: deps.autoDownloadStore },
+        payload,
+        chatId,
+        text,
+      );
+      return;
+    }
+
+    let urls = parseDlUrls(text);
+    let isAutoDownload = false;
+
+    if (
+      urls.length === 0 &&
+      !text.trim().startsWith("/") &&
+      deps.autoDownloadStore
+    ) {
+      const isEnabled = await deps.autoDownloadStore.isEnabled(payload);
+      if (isEnabled) {
+        urls = extractUrlsFromText(text);
+        if (urls.length > 0) {
+          isAutoDownload = true;
+        }
+      }
+    }
+
     if (urls.length === 0) {
       return;
     }
 
     deps.logger?.info(
-      `[WAHA] Received /dl command from ${chatId} (${urls.length} url(s), msg=${payload.id})`,
+      `[WAHA] Received ${isAutoDownload ? "auto-download" : "/dl command"} from ${chatId} (${urls.length} url(s), msg=${payload.id})`,
     );
 
     await markSeenBestEffort();

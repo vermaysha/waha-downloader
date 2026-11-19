@@ -72,10 +72,12 @@ See [.env.example](.env.example) for the full list:
 | `MAX_WHATSAPP_MEDIA_BYTES` | No | `52428800` | Max video size (bytes) sent directly via WhatsApp (50 MiB) |
 | `TMP_DIR` | No | `tmp` | Temporary working directory for downloads and per-job cookies |
 | `COOKIES_DIR` | No | `./cookies` | Directory storing `<requester>/<domain>.txt` cookie profiles |
+| `AUTODL_FILE` | No | `./data/autodownload.json` | Persistent JSON file storing per-Requester Auto-Download settings |
 
 ## WhatsApp Commands
 
 - **`/dl <url1> [url2 ...]`** — Download one or more space- or newline-separated URLs. Reacts with `⏳` when accepted and replies with the video + R2 URL (or R2 URL text if over the size threshold).
+- **`/autodl [on|off|status]`** — Enable, disable, check status, or toggle auto-download for your phone number. When active, sending any video link automatically downloads it without typing `/dl`.
 - **`/cookies <domain>`** — Save Netscape-format cookies for `<domain>` under your phone number, either by attaching a `.txt` file with `/cookies <domain>` as the caption, or by pasting the cookie lines on subsequent lines.
 - **`/cookies list`** — List all domains for which you have saved cookies.
 - **`/cookies del <domain>`** — Delete your saved cookies for `<domain>`.
